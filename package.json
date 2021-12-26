@@ -1,0 +1,34 @@
+{
+  "name": "blockchain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "tests": "node scripts/createWallet.js",
+    "createWallet": "npx run-func client.js createWallet",
+    "generateKeyPair" : "npx run-func client.js generateKeyPair",
+    "sendTransaction" : "npx run-func client.js sendTransaction"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bs58": "^4.0.1",
+    "couchbase": "^3.1.3",
+    "crypto-js": "^4.0.0",
+    "dir-compare": "^3.3.0",
+    "ec-pem": "^0.18.0",
+    "elliptic": "^6.5.4",
+    "flat-db": "^4.0.0",
+    "js-sha3": "^0.8.0",
+    "level": "^7.0.0",
+    "mongodb": "^3.6.8",
+    "nedb": "^1.8.0",
+    "node-forge": "^0.10.0",
+    "promise": "^8.1.0",
+    "websocket": "^1.0.34",
+    "ws": "^8.3.0"
+  },
+  "devDependencies": {
+    "run-func": "^1.0.5"
+  }
+}
