@@ -69,6 +69,8 @@ wsServer.on('request', function (request) {
                     case "createWallet":
                         console.log('Ok on va créer un wallet');
                         verifyWallet(result)
+
+
                         break;
                     case "sendTransaction":
                         console.log("sendTransaction");
@@ -128,9 +130,27 @@ wsServer.on('request', function (request) {
 
 
         const bytes = Buffer.from(pubKeyRecovered.encodeCompressed("hex"), 'hex')
-        const address = bs58.encode(bytes)
-        console.log(address)
-        console.log("Signature valid?", validSig)
+        const addressRecovered = bs58.encode(bytes)
+        console.log(addressRecovered)
+
+        try {
+            w.get(addressRecovered, function (err, value) {
+                console.log(value)
+                console.log("wget")
+
+                if (value == undefined) {
+                    connection.sendUTF("Wallet doesn't exist")
+
+                } else {
+                    connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable')
+                }
+
+            })
+        } catch (error) {
+            
+        }
+
+        // console.log("Signature valid?", validSig)
     }
 
 

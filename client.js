@@ -182,7 +182,7 @@ module.exports.sendTransaction = function (value, toPubK) {
                 date: Date.now()
             });
             console.log(message)
-
+            
             prepareData = {
                 type: "sendTransaction",
                 message: message,
