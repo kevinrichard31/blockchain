@@ -19,6 +19,8 @@ server.listen(8080, function () {
     console.log((new Date()) + ' Server is listening on port 8080');
 });
 
+let pool = []
+
 wsServer = new WebSocketServer({
     httpServer: server,
     // You should not use autoAcceptConnections for production
@@ -142,6 +144,8 @@ wsServer.on('request', function (request) {
                     connection.sendUTF("Wallet doesn't exist")
 
                 } else {
+                    pool.push(result.message)
+                    console.log(pool)
                     connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable')
                 }
 
