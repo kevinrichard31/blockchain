@@ -110,7 +110,9 @@ wsServer.on('request', function (request) {
     });
 
 
-
+    function emmitTransaction(){
+        
+    }
 
 
     function sendTransaction(result){
