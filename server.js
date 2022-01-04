@@ -18,6 +18,10 @@ const bs58 = require('bs58')
 let elliptic = require('elliptic');
 let sha3 = require('js-sha3');
 let ec = new elliptic.ec('secp256k1');
+
+let connectedList = []
+let pool = []
+
 var server = http.createServer(function (request, response) {
     console.log((new Date()) + ' Received request for ' + request.url);
     response.writeHead(404);
@@ -27,7 +31,6 @@ server.listen(8080, function () {
     console.log((new Date()) + ' Server is listening on port 8080');
 });
 
-let pool = []
 
 wsServer = new WebSocketServer({
     httpServer: server,
@@ -43,13 +46,8 @@ function originIsAllowed(origin) {
     // put logic here to detect whether the specified origin is allowed.
     return true;
 }
-let connectedList = []
+
 wsServer.on('request', function (request) {
-
-
-
-
-
     // Accept the connection of the nodes
     console.log(connectedList.indexOf(request.remoteAddress) > -1) // activer pour la prod
     if (!originIsAllowed(request.origin)) {
@@ -118,9 +116,10 @@ wsServer.on('request', function (request) {
     });
 
     setInterval(() => {
+        AmILeader()
         switch (validator) {
             case true:
-                // On valide le block
+                
 
                 break;
         
@@ -129,8 +128,11 @@ wsServer.on('request', function (request) {
         }
     }, 1000);
 
-    function AmIValidator() {
+    function AmILeader() {
         //  On vérifie si je suis validateur
+        stackerslist   
+        
+        .includes(monip) ? validator = true : validator = false
     }
 
     function validateBlock(){
