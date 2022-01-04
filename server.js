@@ -130,7 +130,7 @@ wsServer.on('request', function (request) {
     }, 1000);
 
     function AmIValidator() {
-        
+        //  On vérifie si je suis validateur
     }
 
     function validateBlock(){
