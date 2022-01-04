@@ -132,6 +132,10 @@ wsServer.on('request', function (request) {
         stackers.includes(ip.address()) ? validator = true : validator = false
     }
 
+    function becomeStacker(){
+        
+    }
+
     function validateBlock(){
         
     }
