@@ -1,8 +1,16 @@
+// ************************ //
+// Warning: By touching this code, you can be banned from the network.
+// The integrity of the network depends on a uniform code and similar functions.
+// Attempting to change the code can get you banned from the network.
+// ************************ //
+
+
 const level = require('level')
 const t = level('transactions')
 const w = level('wallets')
 const iT = level('indexT')
 
+let validator = false
 
 var WebSocketServer = require('websocket').server;
 var http = require('http');
@@ -109,11 +117,25 @@ wsServer.on('request', function (request) {
         console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
     });
 
+    setInterval(() => {
+        switch (validator) {
+            case true:
+                // On valide le block
 
-    function emmitTransaction(){
+                break;
+        
+            default:
+                break;
+        }
+    }, 1000);
+
+    function AmIValidator() {
         
     }
 
+    function validateBlock(){
+        
+    }
 
     function sendTransaction(result){
         // console.log(result)
