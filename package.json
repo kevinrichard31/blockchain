@@ -6,8 +6,8 @@
   "scripts": {
     "tests": "node scripts/createWallet.js",
     "createWallet": "npx run-func client.js createWallet",
-    "generateKeyPair" : "npx run-func client.js generateKeyPair",
-    "sendTransaction" : "npx run-func client.js sendTransaction"
+    "generateKeyPair": "npx run-func client.js generateKeyPair",
+    "sendTransaction": "npx run-func client.js sendTransaction"
   },
   "author": "",
   "license": "ISC",
@@ -25,6 +25,7 @@
     "nedb": "^1.8.0",
     "node-forge": "^0.10.0",
     "promise": "^8.1.0",
+    "robotjs": "^0.6.0",
     "websocket": "^1.0.34",
     "ws": "^8.3.0"
   },
