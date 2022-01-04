@@ -4,7 +4,7 @@
 // Attempting to change the code can get you banned from the network.
 // ************************ //
 
-
+var ip = require('ip');
 const level = require('level')
 const t = level('transactions')
 const w = level('wallets')
@@ -19,8 +19,9 @@ let elliptic = require('elliptic');
 let sha3 = require('js-sha3');
 let ec = new elliptic.ec('secp256k1');
 
-let connectedList = []
+let connectedPeers = []
 let pool = []
+let stackers = []
 
 var server = http.createServer(function (request, response) {
     console.log((new Date()) + ' Received request for ' + request.url);
@@ -49,7 +50,7 @@ function originIsAllowed(origin) {
 
 wsServer.on('request', function (request) {
     // Accept the connection of the nodes
-    console.log(connectedList.indexOf(request.remoteAddress) > -1) // activer pour la prod
+    console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
     if (!originIsAllowed(request.origin)) {
         // Make sure we only accept requests from an allowed origin
         request.reject();
@@ -57,8 +58,8 @@ wsServer.on('request', function (request) {
         return;
     }
     var connection = request.accept('echo-protocol', request.origin);
-    connectedList.push(request.remoteAddress)
-    console.log(connectedList)
+    connectedPeers.push(request.remoteAddress)
+    console.log(connectedPeers)
     console.log((new Date()) + ' Connection accepted.');
 
     // Receiving messages from nodes (peers)
@@ -104,9 +105,9 @@ wsServer.on('request', function (request) {
     });
     connection.on('close', function (reasonCode, description) {
         // We delete the last connection from our List of peers
-        connectedList = connectedList.filter(function (o) {
+        connectedPeers = connectedPeers.filter(function (o) {
             setTimeout(() => {
-                console.log(connectedList)
+                console.log(connectedPeers)
             }, 1000);
             return o !== connection.remoteAddress
 
@@ -119,8 +120,6 @@ wsServer.on('request', function (request) {
         AmILeader()
         switch (validator) {
             case true:
-                
-
                 break;
         
             default:
@@ -130,9 +129,7 @@ wsServer.on('request', function (request) {
 
     function AmILeader() {
         //  On vérifie si je suis validateur
-        stackerslist   
-        
-        .includes(monip) ? validator = true : validator = false
+        stackers.includes(ip.address()) ? validator = true : validator = false
     }
 
     function validateBlock(){
