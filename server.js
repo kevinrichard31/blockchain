@@ -146,7 +146,7 @@ wsServer.on('request', function (request) {
                     connection.sendUTF("Wallet doesn't exist")
 
                 } else {
-                    pool.push(result.message)
+                    pool.push(result.message) // on push le message dans la pool de transaction
                     console.log(pool)
                     connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable')
                 }
