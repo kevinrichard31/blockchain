@@ -167,7 +167,7 @@ function signMessage(message) {
     return signature;
 }
 
-client.connect('ws://localhost:8080/', 'echo-protocol');
+client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
 // signWalletAndConfirmCreation()
 module.exports.sendTransaction = function (value, toPubK) {
 
