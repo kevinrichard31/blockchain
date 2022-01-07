@@ -155,7 +155,7 @@ wsServer.on('request', function (request) {
 
 
     function becomeStacker(result){
-
+        console.log(verifySignature(result))
     }
 
     function verifySignature(result){
