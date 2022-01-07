@@ -10,7 +10,7 @@ const t = level('transactions')
 const w = level('wallets')
 const iT = level('indexT')
 
-let validator = false
+let leader = false
 
 var WebSocketServer = require('websocket').server;
 var http = require('http');
@@ -47,18 +47,53 @@ function originIsAllowed(origin) {
     // put logic here to detect whether the specified origin is allowed.
     return true;
 }
+setInterval(() => {
+    AmILeader()
+    switch (leader) {
+        case true:
+            break;
+
+        default:
+            break;
+    }
+}, 1000);
+
+
+
+function AmILeader() {
+    //  On vérifie si je suis validateur
+    stackers.includes(ip.address()) ? leader = true : leader = false
+    //     let obj = arr.find(o => o.name === 'string 1');
+
+    // console.log(obj);
+
+}
+
+
 
 wsServer.on('request', function (request) {
     // Accept the connection of the nodes
-    console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
-    if (!originIsAllowed(request.origin)) {
+
+    // console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
+    if (!originIsAllowed(request.origin) || request.remoteAddress.split(":").pop().length < 6 || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true) {
+
         // Make sure we only accept requests from an allowed origin
         request.reject();
-        console.log((new Date()) + ' Connection from origin ' + request.origin + ' rejected.');
+        console.log((new Date()) + ' Connection from origin ' + request.remoteAddress + ' rejected.');
         return;
     }
+    console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
+
     var connection = request.accept('echo-protocol', request.origin);
-    connectedPeers.push(request.remoteAddress)
+
+
+
+    function validateBlock() {
+
+    }
+    connectedPeers.push(request.remoteAddress.split(":").pop()) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+
+    // console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
     console.log(connectedPeers)
     console.log((new Date()) + ' Connection accepted.');
 
@@ -78,12 +113,15 @@ wsServer.on('request', function (request) {
                     case "createWallet":
                         console.log('Ok on va créer un wallet');
                         verifyWallet(result)
-
-
                         break;
                     case "sendTransaction":
                         console.log("sendTransaction");
                         sendTransaction(result)
+                        break;
+                    case "becomeStacker":
+                        console.log("becomeStacker");
+                        console.log("become stacker ok !")
+                        becomeStacker(result)
                         break;
                     default:
                         console.log(`Sorry, ${result.type} doesn't exist`);
@@ -109,38 +147,21 @@ wsServer.on('request', function (request) {
             setTimeout(() => {
                 console.log(connectedPeers)
             }, 1000);
-            return o !== connection.remoteAddress
+            return o !== connection.remoteAddress.split(":").pop()
 
         });
 
-        console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
+        console.log((new Date()) + ' Peer ' + connection.remoteAddress.split(":").pop() + ' disconnected.');
     });
 
-    setInterval(() => {
-        AmILeader()
-        switch (validator) {
-            case true:
-                break;
-        
-            default:
-                break;
-        }
-    }, 1000);
 
-    function AmILeader() {
-        //  On vérifie si je suis validateur
-        stackers.includes(ip.address()) ? validator = true : validator = false
+
+
+    function becomeStacker(result){
+
     }
 
-    function becomeStacker(){
-        
-    }
-
-    function validateBlock(){
-        
-    }
-
-    function sendTransaction(result){
+    function sendTransaction(result) {
         // console.log(result)
 
         let msgHash = sha3.keccak256(result.message)
@@ -178,7 +199,7 @@ wsServer.on('request', function (request) {
 
             })
         } catch (error) {
-            
+
         }
 
         // console.log("Signature valid?", validSig)

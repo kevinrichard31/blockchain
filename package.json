@@ -7,7 +7,8 @@
     "tests": "node scripts/createWallet.js",
     "createWallet": "npx run-func client.js createWallet",
     "generateKeyPair": "npx run-func client.js generateKeyPair",
-    "sendTransaction": "npx run-func client.js sendTransaction"
+    "sendTransaction": "npx run-func client.js sendTransaction",
+    "becomeStacker": "npx run-func client.js becomeStacker"
   },
   "author": "",
   "license": "ISC",

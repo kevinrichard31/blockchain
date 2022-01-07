@@ -47,6 +47,8 @@ let privateKey
 
 // 
 
+
+
 module.exports.generateKeyPair = function () {
     if (fs.existsSync('GIGATREEprivateKey.pem' || 'GIGATREEpublicKey.pem')) {
         console.log("You already have keys, move your keys if you want generate new Wallet (GIGATREEpublicKey.pem & GIGATREEprivateKey.pem)")
@@ -167,10 +169,9 @@ function signMessage(message) {
     return signature;
 }
 
-client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
+client.connect('ws://localhost:8080/', 'echo-protocol');
 // signWalletAndConfirmCreation()
 module.exports.sendTransaction = function (value, toPubK) {
-
     if (value && toPubK) {
         client.on('connect', function (connection) {
             console.log("Connected to GIGANETWORK")
@@ -201,3 +202,24 @@ module.exports.sendTransaction = function (value, toPubK) {
         });
     }
 };
+
+
+
+module.exports.becomeStacker = function () {
+    let message = JSON.stringify({
+        type: 'becomeStacker',
+        date: Date.now()
+    });
+
+    let prepareData = {
+        type: "becomeStacker",
+        message: message,
+        signature: signMessage(message),
+        date: Date.now()
+    }
+    client.on('connect', function (connection) {
+        connection.sendUTF(JSON.stringify(prepareData))
+        connection.close()
+    })
+    
+}
