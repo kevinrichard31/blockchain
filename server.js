@@ -120,7 +120,6 @@ wsServer.on('request', function (request) {
                         break;
                     case "becomeStacker":
                         console.log("becomeStacker");
-                        console.log("become stacker ok !")
                         becomeStacker(result)
                         break;
                     default:
@@ -128,8 +127,6 @@ wsServer.on('request', function (request) {
                 }
                 // console.log(JSON.parse(result.walletToVerify))
                 // console.log(JSON.parse(result.signature))
-
-
 
             } catch (err) {
                 connection.sendUTF('GIGANETWORK: error');
@@ -161,9 +158,7 @@ wsServer.on('request', function (request) {
 
     }
 
-    function sendTransaction(result) {
-        // console.log(result)
-
+    function verifySignature(result){
         let msgHash = sha3.keccak256(result.message)
         console.log("msghash : " + msgHash)
 
@@ -181,8 +176,12 @@ wsServer.on('request', function (request) {
 
         const bytes = Buffer.from(pubKeyRecovered.encodeCompressed("hex"), 'hex')
         const addressRecovered = bs58.encode(bytes)
-        console.log(addressRecovered)
+        return addressRecovered;
+    }
 
+    function sendTransaction(result) {
+        // console.log(result)
+        const addressRecovered = verifySignature(result)
         try {
             w.get(addressRecovered, function (err, value) {
                 console.log(value)
