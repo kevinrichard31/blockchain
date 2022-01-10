@@ -187,13 +187,19 @@ module.exports.sendTransaction = function (value, toPubK) {
             prepareData = {
                 type: "sendTransaction",
                 message: message,
-                signature: signMessage(message),
-                date: Date.now()
+                signature: signMessage(message)
             }
             // console.log(JSON.stringify(prepareData))
 
             connection.sendUTF(JSON.stringify(prepareData))
-            connection.close()
+            connection.on('message', function (message) {
+                if (message.type === 'utf8') {
+                    console.log(message.utf8Data);
+                }
+            });
+            setTimeout(() => {
+                connection.close()
+            }, 1000);
         });
     } else {
         console.log("missing params : value and/or recipient public key")
@@ -218,8 +224,10 @@ module.exports.becomeStacker = function () {
         date: Date.now()
     }
     client.on('connect', function (connection) {
+
         connection.sendUTF(JSON.stringify(prepareData))
-        connection.close()
+        // connection.close()
     })
+
     
 }

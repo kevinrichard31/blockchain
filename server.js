@@ -6,9 +6,9 @@
 
 var ip = require('ip');
 const level = require('level')
-const t = level('transactions')
 const w = level('wallets')
-const iT = level('indexT')
+const blocks = level('blocks')
+const gazfee = 0.025
 
 let leader = false
 
@@ -107,7 +107,7 @@ wsServer.on('request', function (request) {
                 // Décodage du message utf8 en json lisible
                 var result = JSON.parse(message.utf8Data);
                 console.log(result)
-                connection.sendUTF('GIGANETWORK: message received')
+
 
                 switch (result.type) {
                     case "createWallet":
@@ -180,25 +180,67 @@ wsServer.on('request', function (request) {
     }
 
     function sendTransaction(result) {
-        // console.log(result)
+        console.log(JSON.parse(result.message).amountToSend)
         const addressRecovered = verifySignature(result)
+        console.log(addressRecovered)
+
+
         try {
-            w.get(addressRecovered, function (err, value) {
-                console.log(value)
-                console.log("wget")
-
-                if (value == undefined) {
-                    connection.sendUTF("Wallet doesn't exist")
-
-                } else {
-                    pool.push(result.message) // on push le message dans la pool de transaction
-                    console.log(pool)
-                    connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable')
+            w.put(addressRecovered, JSON.stringify({
+                value: 1000,
+                creationDate: Date.now(),
+                lastInfoModification: Date.now(),
+                lastTransaction: {
+                    block: null,
+                    hash: null
                 }
+            }), function (err, value) {
+                if (err) return console.log('Ooops!', err) // some kind of I/O error
+    
+    
+            })
+            w.put('test', JSON.stringify({
+                value: 1000,
+                creationDate: Date.now(),
+                lastInfoModification: Date.now(),
+                lastTransaction: {
+                    block: null,
+                    hash: null
+                }
+            }), function (err, value) {
+                if (err) return console.log('Ooops!', err) // some kind of I/O error
+    
+    
+            })
+            w.get(addressRecovered, function (err, value) {
+                const valueInWallet = JSON.parse(value).value
+                const amountToSend = JSON.parse(result.message).amountToSend
+                console.log(valueInWallet + (valueInWallet * (gazfee/100)))
+                if (value != undefined){
+                    if((amountToSend + (amountToSend * (gazfee/100))) <= valueInWallet){
+                        w.get(JSON.parse(result.message).toPubK, function(err, value){
+                            if(value != undefined){
+                            pool.push(result) // on push le message dans la pool de transaction
+                            connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee/100)))
+                            console.log(pool) 
+                            connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable, Transaction added to the validation pool.')
+                            } else {
+                                connection.sendUTF("GIGANETWORK: the recipient's key does not exist into this node")
+                            }
+                        })
+
+                    } else {
+                        connection.sendUTF('GIGANETWORK: Not enough $GIGA')
+                        connection.sendUTF("GIGANETWORK: You may not have enough to pay for gas")
+                        connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee/100)))
+                        connection.sendUTF('To send ' + amountToSend + ", you need " + (amountToSend + (amountToSend * (gazfee/100))))
+                    }
+                }
+
 
             })
         } catch (error) {
-
+            console.log(error)
         }
 
         // console.log("Signature valid?", validSig)
@@ -236,9 +278,12 @@ wsServer.on('request', function (request) {
                         connection.sendUTF('Wallet added')
                         w.put(address, JSON.stringify({
                             value: 0,
-                            historyInput: [],
-                            historyOutput: [],
-                            creationDate: Date.now()
+                            creationDate: Date.now(),
+                            lastInfoModification: null,
+                            lastTransaction: {
+                                block: null,
+                                hash: null
+                            }
                         }), function (err, value) {
                             if (err) return console.log('Ooops!', err) // some kind of I/O error
 
@@ -259,5 +304,8 @@ wsServer.on('request', function (request) {
         }
     }
 
+    function insertDecimal(num) {
+        return (num / 100).toFixed(8);
+     }
 
 });
