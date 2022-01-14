@@ -157,19 +157,23 @@ module.exports.createWallet = function () {
 };
 
 let client = new WebSocketClient();
+client.connect('ws://localhost:8080/', 'echo-protocol');
 
-function signMessage(message) {
+module.exports = {
+    signMessage(message) {
 
-    let msgHash = sha3.keccak256(message);
-    let signature =
-        ec.sign(msgHash, fs.readFileSync('GIGATREEprivateKey.pem').toString('utf8'), "hex");
-
-    signature = JSON.stringify(signature)
-
-    return signature;
+        let msgHash = sha3.keccak256(message);
+        let signature =
+            ec.sign(msgHash, fs.readFileSync('GIGATREEprivateKey.pem').toString('utf8'), "hex");
+    
+        signature = JSON.stringify(signature)
+    
+        return signature;
+    }
 }
 
-client.connect('ws://localhost:8080/', 'echo-protocol');
+
+
 // signWalletAndConfirmCreation()
 module.exports.sendTransaction = function (value, toPubK) {
     if (value && toPubK) {
@@ -224,7 +228,6 @@ module.exports.becomeStacker = function () {
         date: Date.now()
     }
     client.on('connect', function (connection) {
-
         connection.sendUTF(JSON.stringify(prepareData))
         // connection.close()
     })

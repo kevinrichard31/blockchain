@@ -4,14 +4,17 @@
 // Attempting to change the code can get you banned from the network.
 // ************************ //
 
+var tools = require('./client.js')
 var ip = require('ip');
 const level = require('level')
-const w = level('wallets')
+const wallets = level('wallets')
 const blocks = level('blocks')
+const infos = level('infos')
 const gazfee = 0.025
 
 let leader = false
 
+var WebSocketClient = require('websocket').client;
 var WebSocketServer = require('websocket').server;
 var http = require('http');
 const bs58 = require('bs58')
@@ -22,6 +25,23 @@ let ec = new elliptic.ec('secp256k1');
 let connectedPeers = []
 let pool = []
 let stackers = []
+
+// CLIENT PART TO CONNECT TO ANOTHER NODES
+let client = new WebSocketClient();
+client.connect('ws://localhost:8081/', 'echo-protocol');
+client.on('connect', function (connection) {
+    connection.sendUTF('Bonjour')
+    connection.on('message', function (message) {
+        if (message.type === 'utf8') {
+            console.log(message.utf8Data);
+        }
+    });
+
+});
+
+
+// END CLIENT PART TO CONNECT TO ANOTHER NODES
+
 
 var server = http.createServer(function (request, response) {
     console.log((new Date()) + ' Received request for ' + request.url);
@@ -155,8 +175,23 @@ wsServer.on('request', function (request) {
 
 
     function becomeStacker(ip, result){
-        console.log(verifySignature(result))
+        let message = JSON.stringify({
+            type: 'becomeStacker',
+            date: Date.now()
+        });
+    
+        let prepareData = {
+            type: "becomeStacker",
+            message: message,
+            signature: tools.signMessage(message)
+        }
+        client.on('connect', function (connection) {
+            connection.sendUTF(JSON.stringify(prepareData))
+            // connection.close()
+        })
+        
     }
+    becomeStacker()
 
     function verifySignature(result){
         let msgHash = sha3.keccak256(result.message)
@@ -186,7 +221,7 @@ wsServer.on('request', function (request) {
 
 
         try {
-            w.put(addressRecovered, JSON.stringify({
+            wallets.put(addressRecovered, JSON.stringify({
                 value: 1000,
                 creationDate: Date.now(),
                 lastInfoModification: Date.now(),
@@ -199,7 +234,7 @@ wsServer.on('request', function (request) {
     
     
             })
-            w.put('test', JSON.stringify({
+            wallets.put('test', JSON.stringify({
                 value: 1000,
                 creationDate: Date.now(),
                 lastInfoModification: Date.now(),
@@ -212,13 +247,13 @@ wsServer.on('request', function (request) {
     
     
             })
-            w.get(addressRecovered, function (err, value) {
+            wallets.get(addressRecovered, function (err, value) {
                 const valueInWallet = JSON.parse(value).value
                 const amountToSend = JSON.parse(result.message).amountToSend
                 console.log(valueInWallet + (valueInWallet * (gazfee/100)))
                 if (value != undefined){
                     if((amountToSend + (amountToSend * (gazfee/100))) <= valueInWallet){
-                        w.get(JSON.parse(result.message).toPubK, function(err, value){
+                        wallets.get(JSON.parse(result.message).toPubK, function(err, value){
                             if(value != undefined){
                             pool.push(result) // on push le message dans la pool de transaction
                             connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee/100)))
@@ -270,13 +305,13 @@ wsServer.on('request', function (request) {
                 const address = bs58.encode(bytes)
                 console.log(address)
 
-                w.get(address, function (err, value) {
+                wallets.get(address, function (err, value) {
                     console.log(value)
                     console.log("wget")
 
                     if (value == undefined) {
                         connection.sendUTF('Wallet added')
-                        w.put(address, JSON.stringify({
+                        wallets.put(address, JSON.stringify({
                             value: 0,
                             creationDate: Date.now(),
                             lastInfoModification: null,
