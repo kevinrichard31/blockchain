@@ -30,12 +30,12 @@ let stackers = []
 let client = new WebSocketClient();
 client.connect('ws://localhost:8081/', 'echo-protocol');
 client.on('connect', function (connection) {
-    connection.sendUTF('Bonjour')
-    connection.on('message', function (message) {
-        if (message.type === 'utf8') {
-            console.log(message.utf8Data);
-        }
-    });
+
+    // connection.on('message', function (message) {
+    //     if (message.type === 'utf8') {
+    //         console.log(message.utf8Data);
+    //     }
+    // });
 
 });
 
@@ -111,7 +111,7 @@ wsServer.on('request', function (request) {
     function validateBlock() {
 
     }
-    connectedPeers.push(request.remoteAddress.split(":").pop()) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+    connectedPeers.push({ip:request.remoteAddress.split(":").pop(), stacking: false}) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
 
     // console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
     console.log(connectedPeers)
@@ -140,7 +140,7 @@ wsServer.on('request', function (request) {
                         break;
                     case "becomeStacker":
                         console.log("becomeStacker");
-                        becomeStacker(result)
+                        becomeStacker(connection.remoteAddress.split(":").pop(), result)
                         break;
                     default:
                         console.log(`Sorry, ${result.type} doesn't exist`);
@@ -149,7 +149,7 @@ wsServer.on('request', function (request) {
                 // console.log(JSON.parse(result.signature))
 
             } catch (err) {
-                connection.sendUTF('GIGANETWORK: error');
+                connection.sendUTF('GIGANETWORK: connection ok but no case type found');
                 return null
             }
         }
@@ -164,7 +164,7 @@ wsServer.on('request', function (request) {
             setTimeout(() => {
                 console.log(connectedPeers)
             }, 1000);
-            return o !== connection.remoteAddress.split(":").pop()
+            return o.ip !== connection.remoteAddress.split(":").pop()
 
         });
 
@@ -173,8 +173,19 @@ wsServer.on('request', function (request) {
 
 
 
-
     function becomeStacker(ip, result){
+        console.log(verifySignature(result))
+        console.log(connectedPeers.findIndex((peer) => peer.ip === ip))
+        let indexPeer
+        indexPeer = connectedPeers.findIndex((peer) => peer.ip === ip)
+        if(indexPeer >= 0 && connectedPeers[indexPeer].stacking == false){
+            connectedPeers[indexPeer].stacking = true
+            connectedPeers[indexPeer].signature = result
+            console.log(connectedPeers)
+        }
+    }
+
+    function sendBecomeStacker(ip, result){
         let message = JSON.stringify({
             type: 'becomeStacker',
             date: Date.now()
@@ -191,7 +202,7 @@ wsServer.on('request', function (request) {
         })
         
     }
-    becomeStacker()
+    sendBecomeStacker()
 
     function verifySignature(result){
         let msgHash = sha3.keccak256(result.message)
