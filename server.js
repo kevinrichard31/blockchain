@@ -28,7 +28,7 @@ let stackers = []
 
 // CLIENT PART TO CONNECT TO ANOTHER NODES
 let client = new WebSocketClient();
-client.connect('ws://localhost:8080/', 'echo-protocol');
+client.connect('ws://localhost:8081/', 'echo-protocol');
 client.on('connect', function (connection) {
 
     // connection.on('message', function (message) {
