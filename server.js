@@ -28,7 +28,7 @@ let stackers = []
 
 // CLIENT PART TO CONNECT TO ANOTHER NODES
 let client = new WebSocketClient();
-client.connect('ws://localhost:8081/', 'echo-protocol');
+client.connect('ws://localhost:8080/', 'echo-protocol');
 client.on('connect', function (connection) {
 
     // connection.on('message', function (message) {
@@ -106,12 +106,14 @@ wsServer.on('request', function (request) {
 
     var connection = request.accept('echo-protocol', request.origin);
 
-
+    let remoteIP = request.remoteAddress.split(":").pop()
 
     function validateBlock() {
 
     }
-    connectedPeers.push({ip:request.remoteAddress.split(":").pop(), stacking: false}) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+    if(connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0){ // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
+        connectedPeers.push({ip:request.remoteAddress.split(":").pop(), stacking: false}) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+    }
 
     // console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
     console.log(connectedPeers)
