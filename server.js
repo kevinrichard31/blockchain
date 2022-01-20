@@ -30,13 +30,11 @@ let stackers = []
 let client = new WebSocketClient();
 client.connect('ws://127.0.0.1:8081/', 'echo-protocol');
 client.on('connect', function (connection) {
-
     // connection.on('message', function (message) {
     //     if (message.type === 'utf8') {
     //         console.log(message.utf8Data);
     //     }
     // });
-
 });
 
 
