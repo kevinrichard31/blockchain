@@ -14,7 +14,7 @@ const gazfee = 0.025
 
 let leader = false
 
-var WebSocketClient = require('websocket').client;
+
 var WebSocketServer = require('websocket').server;
 var http = require('http');
 const bs58 = require('bs58')
@@ -26,17 +26,49 @@ let connectedPeers = []
 let pool = []
 let stackers = []
 
-// CLIENT PART TO CONNECT TO ANOTHER NODES
+// CLIENT PART TO CONNECT TO ANOTHER NODES.
+var WebSocketClient = require('websocket').client;
 let client = new WebSocketClient();
-client.connect('ws://127.0.0.1:8081/', 'echo-protocol');
+client.connect('ws://192.168.1.13:8081/', 'echo-protocol');
 client.on('connect', function (connection) {
     // connection.on('message', function (message) {
     //     if (message.type === 'utf8') {
     //         console.log(message.utf8Data);
     //     }
     // });
+    sendBecomeStacker(connection)
 });
 
+function sendBecomeStacker(connection){
+    console.log('becommme')
+    let message = JSON.stringify({
+        type: 'becomeStacker',
+        date: Date.now()
+    });
+
+    let prepareData = {
+        type: "becomeStacker",
+        message: message,
+        signature: tools.signMessage(message)
+    }
+
+        connection.sendUTF(JSON.stringify(prepareData))
+        // connection.close()
+        // walletest à supprimer delete deleted
+        wallets.put('oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk', JSON.stringify({
+            value: 1000,
+            creationDate: Date.now(),
+            lastInfoModification: Date.now(),
+            lastTransaction: {
+                block: null,
+                hash: null
+            }
+        }), function (err, value) {
+            if (err) return console.log('Ooops!', err) // some kind of I/O error
+        })
+        // fin à a supprimer
+    
+}
 
 // END CLIENT PART TO CONNECT TO ANOTHER NODES
 
@@ -65,16 +97,16 @@ function originIsAllowed(origin) {
     // put logic here to detect whether the specified origin is allowed.
     return true;
 }
-setInterval(() => {
-    AmILeader()
-    switch (leader) {
-        case true:
-            break;
+// setInterval(() => {
+//     AmILeader()
+//     switch (leader) {
+//         case true:
+//             break;
 
-        default:
-            break;
-    }
-}, 1000);
+//         default:
+//             break;
+//     }
+// }, 1000);
 
 
 
@@ -82,18 +114,16 @@ function AmILeader() {
     //  On vérifie si je suis validateur
     stackers.includes(ip.address()) ? leader = true : leader = false
     //     let obj = arr.find(o => o.name === 'string 1');
-
     // console.log(obj);
-
 }
 
 
 
 wsServer.on('request', function (request) {
+    console.log(request.origin)
     // Accept the connection of the nodes
-
     // console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
-    if (!originIsAllowed(request.origin) || request.remoteAddress.split(":").pop().length < 6 || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true) {
+    if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true) {
 
         // Make sure we only accept requests from an allowed origin
         request.reject();
@@ -175,34 +205,24 @@ wsServer.on('request', function (request) {
 
     function becomeStacker(ip, result){
         console.log(verifySignature(result))
-        console.log(connectedPeers.findIndex((peer) => peer.ip === ip))
-        let indexPeer
-        indexPeer = connectedPeers.findIndex((peer) => peer.ip === ip)
-        if(indexPeer >= 0 && connectedPeers[indexPeer].stacking == false){
-            connectedPeers[indexPeer].stacking = true
-            connectedPeers[indexPeer].signature = result
-            console.log(connectedPeers)
+        console.log(JSON.parse(result.message).date)
+        console.log(Date.now() - JSON.parse(result.message).date)
+        if(Date.now() - JSON.parse(result.message).date < 60000){
+            w.get(verifySignature(result), function (err, value) {
+                if(JSON.parse(value).value >= stackingmin){
+                    let indexPeer
+                    indexPeer = connectedPeers.findIndex((peer) => peer.ip === ip)
+                    if(indexPeer >= 0 && connectedPeers[indexPeer].stacking == false){
+                        connectedPeers[indexPeer].stacking = true
+                        connectedPeers[indexPeer].signature = result
+                        console.log(connectedPeers)
+                    }
+                }
+            })
         }
     }
 
-    function sendBecomeStacker(ip, result){
-        let message = JSON.stringify({
-            type: 'becomeStacker',
-            date: Date.now()
-        });
-    
-        let prepareData = {
-            type: "becomeStacker",
-            message: message,
-            signature: tools.signMessage(message)
-        }
-        client.on('connect', function (connection) {
-            connection.sendUTF(JSON.stringify(prepareData))
-            // connection.close()
-        })
-        
-    }
-    sendBecomeStacker()
+
 
     function verifySignature(result){
         let msgHash = sha3.keccak256(result.message)

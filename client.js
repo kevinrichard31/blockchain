@@ -156,9 +156,8 @@ module.exports.createWallet = function () {
     })
 };
 
-let client = new WebSocketClient();
-client.connect('ws://localhost:8080/', 'echo-protocol');
-
+// let client = new WebSocketClient();
+// client.connect('ws://192.168.1.13:8081/', 'echo-protocol');
 module.exports = {
     signMessage(message) {
 
