@@ -11,7 +11,7 @@ const wallets = level('wallets')
 const blocks = level('blocks')
 const infos = level('infos')
 const gazfee = 0.025
-
+const stackingmin = 1000
 let leader = false
 
 
@@ -29,7 +29,7 @@ let stackers = []
 // CLIENT PART TO CONNECT TO ANOTHER NODES.
 var WebSocketClient = require('websocket').client;
 let client = new WebSocketClient();
-client.connect('ws://192.168.1.13:8081/', 'echo-protocol');
+client.connect('ws://192.168.1.13:8080/', 'echo-protocol');
 client.on('connect', function (connection) {
     // connection.on('message', function (message) {
     //     if (message.type === 'utf8') {
@@ -37,7 +37,9 @@ client.on('connect', function (connection) {
     //     }
     // });
     sendBecomeStacker(connection)
+        // connection.sendUTF(JSON.stringify({type:'superbite'}))
 });
+
 
 function sendBecomeStacker(connection){
     console.log('becommme')
@@ -52,20 +54,20 @@ function sendBecomeStacker(connection){
         signature: tools.signMessage(message)
     }
 
-        connection.sendUTF(JSON.stringify(prepareData))
-        // connection.close()
-        // walletest à supprimer delete deleted
-        wallets.put('oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk', JSON.stringify({
-            value: 1000,
-            creationDate: Date.now(),
-            lastInfoModification: Date.now(),
-            lastTransaction: {
-                block: null,
-                hash: null
-            }
-        }), function (err, value) {
-            if (err) return console.log('Ooops!', err) // some kind of I/O error
-        })
+    connection.sendUTF(JSON.stringify(prepareData))
+    // connection.close()
+    // walletest à supprimer delete deleted
+    wallets.put('oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk', JSON.stringify({
+        value: 1000,
+        creationDate: Date.now(),
+        lastInfoModification: Date.now(),
+        lastTransaction: {
+            block: null,
+            hash: null
+        }
+    }), function (err, value) {
+        if (err) return console.log('Ooops!', err) // some kind of I/O error
+    })
         // fin à a supprimer
     
 }
@@ -118,7 +120,7 @@ function AmILeader() {
 }
 
 
-
+let allpeers = []
 wsServer.on('request', function (request) {
     console.log(request.origin)
     // Accept the connection of the nodes
@@ -132,19 +134,23 @@ wsServer.on('request', function (request) {
     }
     console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
 
-    var connection = request.accept('echo-protocol', request.origin);
-
+    let connection = request.accept('echo-protocol', request.origin);
+    
     let remoteIP = request.remoteAddress.split(":").pop()
 
     function validateBlock() {
-
     }
+
     if(connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0){ // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
-        connectedPeers.push({ip:request.remoteAddress.split(":").pop(), stacking: false}) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+        connectedPeers.push({ip:request.remoteAddress.split(":").pop(), stacking: false, connection: connection}) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
     }
-
+    // console.log(connectedPeers)
+    // Permet d'envoyer des messages à tout le réseau
+    // connectedPeers.forEach(element => {
+    //     element.connection.sendUTF('superman')
+    // });
     // console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
-    console.log(connectedPeers)
+
     console.log((new Date()) + ' Connection accepted.');
 
     // Receiving messages from nodes (peers)
@@ -191,9 +197,9 @@ wsServer.on('request', function (request) {
     connection.on('close', function (reasonCode, description) {
         // We delete the last connection from our List of peers
         connectedPeers = connectedPeers.filter(function (o) {
-            setTimeout(() => {
-                console.log(connectedPeers)
-            }, 1000);
+            // setTimeout(() => {
+            //     console.log(connectedPeers)
+            // }, 1000);
             return o.ip !== connection.remoteAddress.split(":").pop()
 
         });
@@ -208,14 +214,16 @@ wsServer.on('request', function (request) {
         console.log(JSON.parse(result.message).date)
         console.log(Date.now() - JSON.parse(result.message).date)
         if(Date.now() - JSON.parse(result.message).date < 60000){
-            w.get(verifySignature(result), function (err, value) {
+            wallets.get(verifySignature(result), function (err, value) {
+                console.log(value + " fdfd")
                 if(JSON.parse(value).value >= stackingmin){
                     let indexPeer
                     indexPeer = connectedPeers.findIndex((peer) => peer.ip === ip)
                     if(indexPeer >= 0 && connectedPeers[indexPeer].stacking == false){
                         connectedPeers[indexPeer].stacking = true
                         connectedPeers[indexPeer].signature = result
-                        console.log(connectedPeers)
+                        // console.log(connectedPeers)
+                        console.log("ip stacked")
                     }
                 }
             })
@@ -246,50 +254,39 @@ wsServer.on('request', function (request) {
     }
 
     function sendTransaction(result) {
+
+        
         console.log(JSON.parse(result.message).amountToSend)
         const addressRecovered = verifySignature(result)
         console.log(addressRecovered)
-
-
+        
         try {
-            wallets.put(addressRecovered, JSON.stringify({
-                value: 1000,
-                creationDate: Date.now(),
-                lastInfoModification: Date.now(),
-                lastTransaction: {
-                    block: null,
-                    hash: null
-                }
-            }), function (err, value) {
-                if (err) return console.log('Ooops!', err) // some kind of I/O error
-    
-    
-            })
-            wallets.put('test', JSON.stringify({
-                value: 1000,
-                creationDate: Date.now(),
-                lastInfoModification: Date.now(),
-                lastTransaction: {
-                    block: null,
-                    hash: null
-                }
-            }), function (err, value) {
-                if (err) return console.log('Ooops!', err) // some kind of I/O error
-    
-    
-            })
             wallets.get(addressRecovered, function (err, value) {
                 const valueInWallet = JSON.parse(value).value
                 const amountToSend = JSON.parse(result.message).amountToSend
                 console.log(valueInWallet + (valueInWallet * (gazfee/100)))
-                if (value != undefined){
-                    if((amountToSend + (amountToSend * (gazfee/100))) <= valueInWallet){
+                if (value != undefined){ // vérifie qu'il y a bien une adresse
+                    if((amountToSend + (amountToSend * (gazfee/100))) <= valueInWallet){ // vérifie valeur dans wallet + gazfee suffisant
                         wallets.get(JSON.parse(result.message).toPubK, function(err, value){
                             if(value != undefined){
-                            pool.push(result) // on push le message dans la pool de transaction
-                            connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee/100)))
-                            console.log(pool) 
-                            connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable, Transaction added to the validation pool.')
+                            var SHA256 = require("crypto-js/sha256");
+                            console.log()
+                            result.hash = SHA256(result).toString()
+                            let obj = pool.find(o => o.hash === result.hash)
+                            if(obj == undefined) {
+                                pool.push(result) // on push le message dans la pool de transaction
+                                connectedPeers.forEach(element => {
+                                    console.log(element.stacking)
+                                    if(element.stacking == true){
+                                        console.log('hi')
+                                        element.connection.sendUTF(result)
+                                    }
+                                });
+                                connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee/100)))
+                                
+                                connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable, Transaction added to the validation pool.')
+                            }
+                            console.log(pool)
                             } else {
                                 connection.sendUTF("GIGANETWORK: the recipient's key does not exist into this node")
                             }

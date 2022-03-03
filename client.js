@@ -2,7 +2,7 @@
 const crypto = require('crypto')
 const fs = require('fs')
 const bs58 = require('bs58')
-
+var tools = require('./client.js')
 
 let elliptic = require('elliptic');
 let sha3 = require('js-sha3');
@@ -114,7 +114,6 @@ const { connection } = require('websocket');
 // });
 
 
-// client.connect('ws://localhost:8080/', 'echo-protocol');
 
 // Add the wallet to blockchain by signing a message
 module.exports.createWallet = function () {
@@ -158,18 +157,18 @@ module.exports.createWallet = function () {
 
 // let client = new WebSocketClient();
 // client.connect('ws://192.168.1.13:8081/', 'echo-protocol');
-module.exports = {
-    signMessage(message) {
 
-        let msgHash = sha3.keccak256(message);
-        let signature =
-            ec.sign(msgHash, fs.readFileSync('GIGATREEprivateKey.pem').toString('utf8'), "hex");
-    
-        signature = JSON.stringify(signature)
-    
-        return signature;
-    }
+function signMessage(message) {
+
+    let msgHash = sha3.keccak256(message);
+    let signature =
+        ec.sign(msgHash, fs.readFileSync('GIGATREEprivateKey.pem').toString('utf8'), "hex");
+
+    signature = JSON.stringify(signature)
+
+    return signature;
 }
+module.exports.signMessage = signMessage
 
 // module.exports = {
 //     super(){
@@ -177,9 +176,14 @@ module.exports = {
 //     }
 // }
 
+// récupérer une liste de serveur et se connecter à un noeud
+
+
 
 // signWalletAndConfirmCreation()
 module.exports.sendTransaction = function (value, toPubK) {
+    let client = new WebSocketClient();
+    client.connect('ws://localhost:8080/', 'echo-protocol');
     if (value && toPubK) {
         client.on('connect', function (connection) {
             console.log("Connected to GIGANETWORK")
