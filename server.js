@@ -10,7 +10,7 @@ const level = require('level')
 const wallets = level('wallets')
 const blocks = level('blocks')
 const infos = level('infos')
-const gazfee = 0.025
+const gazfee = 0.026
 const stackingmin = 1000
 let leader = false
 
