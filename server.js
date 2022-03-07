@@ -29,48 +29,31 @@ let stackers = []
 // CLIENT PART TO CONNECT TO ANOTHER NODES.
 var WebSocketClient = require('websocket').client;
 let client = new WebSocketClient();
-client.connect('ws://192.168.1.13:8080/', 'echo-protocol');
-client.on('connect', function (connection) {
-    // connection.on('message', function (message) {
-    //     if (message.type === 'utf8') {
-    //         console.log(message.utf8Data);
-    //     }
-    // });
-    sendBecomeStacker(connection)
-        // connection.sendUTF(JSON.stringify({type:'superbite'}))
-});
+// FONCTION A PASSER EN CLIENT
+// client.connect('ws://192.168.1.13:8080/', 'echo-protocol');
+// client.on('connect', function (connection) {
+//     // connection.on('message', function (message) {
+//     //     if (message.type === 'utf8') {
+//     //         console.log(message.utf8Data);
+//     //     }
+//     // });
+//     sendBecomeStacker(connection)
+//         // connection.sendUTF(JSON.stringify({type:'superbite'}))
+// });
 
-
-function sendBecomeStacker(connection){
-    console.log('becommme')
-    let message = JSON.stringify({
-        type: 'becomeStacker',
-        date: Date.now()
-    });
-
-    let prepareData = {
-        type: "becomeStacker",
-        message: message,
-        signature: tools.signMessage(message)
+wallets.put('oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk', JSON.stringify({
+    value: 1000,
+    creationDate: Date.now(),
+    lastInfoModification: Date.now(),
+    lastTransaction: {
+        block: null,
+        hash: null
     }
+}), function (err, value) {
+    if (err) return console.log('Ooops!', err) // some kind of I/O error
+})
 
-    connection.sendUTF(JSON.stringify(prepareData))
-    // connection.close()
-    // walletest à supprimer delete deleted
-    wallets.put('oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk', JSON.stringify({
-        value: 1000,
-        creationDate: Date.now(),
-        lastInfoModification: Date.now(),
-        lastTransaction: {
-            block: null,
-            hash: null
-        }
-    }), function (err, value) {
-        if (err) return console.log('Ooops!', err) // some kind of I/O error
-    })
-        // fin à a supprimer
-    
-}
+
 
 // END CLIENT PART TO CONNECT TO ANOTHER NODES
 
@@ -122,10 +105,11 @@ function AmILeader() {
 
 let allpeers = []
 wsServer.on('request', function (request) {
-    console.log(request.origin)
+    let obj = connectedPeers.find(o => o.ip == request.remoteAddress.split(":").pop())
+
     // Accept the connection of the nodes
     // console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
-    if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true) {
+    if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true || obj != undefined) {
 
         // Make sure we only accept requests from an allowed origin
         request.reject();
@@ -276,14 +260,14 @@ wsServer.on('request', function (request) {
                             if(obj == undefined) {
                                 pool.push(result) // on push le message dans la pool de transaction
                                 connectedPeers.forEach(element => {
-                                    console.log(element.stacking)
-                                    if(element.stacking == true){
-                                        console.log('hi')
+                                    console.log(element.ip)
+                                    // console.log(result)
+                                    console.log('pute')
+                                    if(element.stacking == true && element.ip != ip.address()){
                                         element.connection.sendUTF(result)
                                     }
                                 });
                                 connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee/100)))
-                                
                                 connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable, Transaction added to the validation pool.')
                             }
                             console.log(pool)

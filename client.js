@@ -170,6 +170,34 @@ function signMessage(message) {
 }
 module.exports.signMessage = signMessage
 
+function sendBecomeStacker(){
+    let client = new WebSocketClient();
+    client.connect('ws://localhost:8080/', 'echo-protocol');
+    client.on('connect', function (connection) {
+
+        console.log('becommme')
+        let message = JSON.stringify({
+            type: 'becomeStacker',
+            date: Date.now()
+        });
+    
+        let prepareData = {
+            type: "becomeStacker",
+            message: message,
+            signature: signMessage(message)
+        }
+    
+        connection.sendUTF(JSON.stringify(prepareData))
+
+    });
+
+    // connection.close()
+    // walletest à supprimer delete deleted
+
+    // fin à a supprimer
+}
+module.exports.sendBecomeStacker = sendBecomeStacker
+
 // module.exports = {
 //     super(){
 //         console.log('boifdig')
