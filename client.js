@@ -208,6 +208,7 @@ module.exports.sendBecomeStacker = sendBecomeStacker
 
 
 
+
 // signWalletAndConfirmCreation()
 module.exports.sendTransaction = function (value, toPubK) {
     let client = new WebSocketClient();

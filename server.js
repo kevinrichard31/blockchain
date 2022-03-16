@@ -69,6 +69,7 @@ server.listen(8080, function () {
 
 
 wsServer = new WebSocketServer({
+
     httpServer: server,
     // You should not use autoAcceptConnections for production
     // applications, as it defeats all standard cross-origin protection
@@ -102,11 +103,79 @@ function AmILeader() {
     // console.log(obj);
 }
 
+let p = [{
+    type: 'sendTransaction',
+    message: '{"amountToSend":1,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1646808628249}',
+    signature: '{"r":"6343bf514dbc58fe7e771b9dde5d242c3a81e74ff917e663b0d94319adf71b2e","s":"a0aa8e71c9442af97d0300925e2e7fb4ecc882b926a4ba03d6122cae8a1272d7","recoveryParam":0}',
+    hash: '2ysdfga6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
+}
+
+]
+
+function GetSortOrder(prop) {
+    return function (a, b) {
+        if (a[prop] > b[prop]) {
+            return 1;
+        } else if (a[prop] < b[prop]) {
+            return -1;
+        }
+        return 0;
+    }
+}
+pool = [
+    {
+        type: 'sendTransaction',
+        message: '{"amountToSend":1,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1646984007351}',
+        signature: '{"r":"431f701f12c4e001f5803ced9607c9a32510290cbafa72e62fd2064c0cfdf81","s":"33863c35f48e695a240648751db70ff9865b7e1ec63d35ea26fe7260af82ef1f","recoveryParam":1}',
+        hash: '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
+    }
+]
+
+function validateBlock() {
+    let blocbuilder = []
+    pool.sort(GetSortOrder("hash"))
+    for (let index = 0; index < 10; index++) { // COPY x FIRSTS
+        if (pool[index] != undefined) {
+            blocbuilder.push(pool[index])
+        }
+    }
+    pool.splice(0, 10);
+    blocbuilder.forEach(element => {
+        console.log(verifySignature(element))
+    });
+}
+
+setTimeout(() => {
+    validateBlock()
+}, 4000);
+
+
+function verifySignature(result) {
+    let msgHash = sha3.keccak256(result.message)
+    console.log("msghash : " + msgHash)
+
+    let hexToDecimal = (x) => ec.keyFromPrivate(x, "hex")
+        .getPrivate().toString(10);
+
+    let pubKeyRecovered = ec.recoverPubKey(
+        hexToDecimal(msgHash), JSON.parse(result.signature),
+        JSON.parse(result.signature).recoveryParam, "hex");
+    console.log("Recovered pubKey:",
+        pubKeyRecovered.encodeCompressed("hex"));
+
+    console.log("pubkeyy")
+
+
+    const bytes = Buffer.from(pubKeyRecovered.encodeCompressed("hex"), 'hex')
+    const addressRecovered = bs58.encode(bytes)
+    return addressRecovered;
+}
+
 
 let allpeers = []
 wsServer.on('request', function (request) {
     let obj = connectedPeers.find(o => o.ip == request.remoteAddress.split(":").pop())
-
+    console.log('pute')
     // Accept the connection of the nodes
     // console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
     if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true || obj != undefined) {
@@ -119,14 +188,13 @@ wsServer.on('request', function (request) {
     console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
 
     let connection = request.accept('echo-protocol', request.origin);
-    
+
     let remoteIP = request.remoteAddress.split(":").pop()
 
-    function validateBlock() {
-    }
 
-    if(connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0){ // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
-        connectedPeers.push({ip:request.remoteAddress.split(":").pop(), stacking: false, connection: connection}) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+
+    if (connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0) { // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
+        connectedPeers.push({ ip: request.remoteAddress.split(":").pop(), stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
     }
     // console.log(connectedPeers)
     // Permet d'envoyer des messages à tout le réseau
@@ -193,17 +261,17 @@ wsServer.on('request', function (request) {
 
 
 
-    function becomeStacker(ip, result){
+    function becomeStacker(ip, result) {
         console.log(verifySignature(result))
         console.log(JSON.parse(result.message).date)
         console.log(Date.now() - JSON.parse(result.message).date)
-        if(Date.now() - JSON.parse(result.message).date < 60000){
+        if (Date.now() - JSON.parse(result.message).date < 60000) {
             wallets.get(verifySignature(result), function (err, value) {
                 console.log(value + " fdfd")
-                if(JSON.parse(value).value >= stackingmin){
+                if (JSON.parse(value).value >= stackingmin) {
                     let indexPeer
                     indexPeer = connectedPeers.findIndex((peer) => peer.ip === ip)
-                    if(indexPeer >= 0 && connectedPeers[indexPeer].stacking == false){
+                    if (indexPeer >= 0 && connectedPeers[indexPeer].stacking == false) {
                         connectedPeers[indexPeer].stacking = true
                         connectedPeers[indexPeer].signature = result
                         // console.log(connectedPeers)
@@ -216,61 +284,43 @@ wsServer.on('request', function (request) {
 
 
 
-    function verifySignature(result){
-        let msgHash = sha3.keccak256(result.message)
-        console.log("msghash : " + msgHash)
 
-        let hexToDecimal = (x) => ec.keyFromPrivate(x, "hex")
-            .getPrivate().toString(10);
-
-        let pubKeyRecovered = ec.recoverPubKey(
-            hexToDecimal(msgHash), JSON.parse(result.signature),
-            JSON.parse(result.signature).recoveryParam, "hex");
-        console.log("Recovered pubKey:",
-            pubKeyRecovered.encodeCompressed("hex"));
-
-        console.log("pubkeyy")
-
-
-        const bytes = Buffer.from(pubKeyRecovered.encodeCompressed("hex"), 'hex')
-        const addressRecovered = bs58.encode(bytes)
-        return addressRecovered;
-    }
 
     function sendTransaction(result) {
 
-        
+
         console.log(JSON.parse(result.message).amountToSend)
         const addressRecovered = verifySignature(result)
         console.log(addressRecovered)
-        
+
         try {
             wallets.get(addressRecovered, function (err, value) {
                 const valueInWallet = JSON.parse(value).value
                 const amountToSend = JSON.parse(result.message).amountToSend
-                console.log(valueInWallet + (valueInWallet * (gazfee/100)))
-                if (value != undefined){ // vérifie qu'il y a bien une adresse
-                    if((amountToSend + (amountToSend * (gazfee/100))) <= valueInWallet){ // vérifie valeur dans wallet + gazfee suffisant
-                        wallets.get(JSON.parse(result.message).toPubK, function(err, value){
-                            if(value != undefined){
-                            var SHA256 = require("crypto-js/sha256");
-                            console.log()
-                            result.hash = SHA256(result).toString()
-                            let obj = pool.find(o => o.hash === result.hash)
-                            if(obj == undefined) {
-                                pool.push(result) // on push le message dans la pool de transaction
-                                connectedPeers.forEach(element => {
-                                    console.log(element.ip)
-                                    // console.log(result)
-                                    console.log('pute')
-                                    if(element.stacking == true && element.ip != ip.address()){
-                                        element.connection.sendUTF(result)
-                                    }
-                                });
-                                connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee/100)))
-                                connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable, Transaction added to the validation pool.')
-                            }
-                            console.log(pool)
+                console.log(valueInWallet + (valueInWallet * (gazfee / 100)))
+                if (value != undefined) { // vérifie qu'il y a bien une adresse
+                    if ((amountToSend + (amountToSend * (gazfee / 100))) <= valueInWallet) { // vérifie valeur dans wallet + gazfee suffisant
+                        wallets.get(JSON.parse(result.message).toPubK, function (err, value) {
+                            if (value != undefined) {
+                                var SHA256 = require("crypto-js/sha256");
+                                result.hash = SHA256(result).toString()
+                                let obj = pool.find(o => o.hash === result.hash)
+                                if (obj == undefined) {
+                                    pool.push(result) // on push le message dans la pool de transaction
+                                    connectedPeers.forEach(element => {
+                                        console.log(element.ip)
+                                        // console.log(result)
+                                        console.log('pute')
+                                        if (element.stacking == true && element.ip != ip.address()) {
+                                            element.connection.sendUTF(result)
+                                        }
+                                    });
+                                    connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee / 100)))
+                                    connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable, Transaction added to the validation pool.')
+                                } else {
+                                    connection.sendUTF('GIGANETWORK: transaction already exist')
+                                }
+                                console.log(pool)
                             } else {
                                 connection.sendUTF("GIGANETWORK: the recipient's key does not exist into this node")
                             }
@@ -279,8 +329,8 @@ wsServer.on('request', function (request) {
                     } else {
                         connection.sendUTF('GIGANETWORK: Not enough $GIGA')
                         connection.sendUTF("GIGANETWORK: You may not have enough to pay for gas")
-                        connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee/100)))
-                        connection.sendUTF('To send ' + amountToSend + ", you need " + (amountToSend + (amountToSend * (gazfee/100))))
+                        connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee / 100)))
+                        connection.sendUTF('To send ' + amountToSend + ", you need " + (amountToSend + (amountToSend * (gazfee / 100))))
                     }
                 }
 
@@ -333,8 +383,6 @@ wsServer.on('request', function (request) {
                             }
                         }), function (err, value) {
                             if (err) return console.log('Ooops!', err) // some kind of I/O error
-
-
                         })
 
                     } else {
@@ -353,6 +401,6 @@ wsServer.on('request', function (request) {
 
     function insertDecimal(num) {
         return (num / 100).toFixed(8);
-     }
+    }
 
 });
