@@ -123,15 +123,17 @@ function GetSortOrder(prop) {
     }
 }
 pool = [
-    {
-        type: 'sendTransaction',
-        message: '{"amountToSend":1,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1646984007351}',
-        signature: '{"r":"431f701f12c4e001f5803ced9607c9a32510290cbafa72e62fd2064c0cfdf81","s":"33863c35f48e695a240648751db70ff9865b7e1ec63d35ea26fe7260af82ef1f","recoveryParam":1}',
-        hash: '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
-    }
+    // {
+    //     type: 'sendTransaction',
+    //     message: '{"amountToSend":1,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1646984007351}',
+    //     signature: '{"r":"431f701f12c4e001f5803ced9607c9a32510290cbafa72e62fd2064c0cfdf81","s":"33863c35f48e695a240648751db70ff9865b7e1ec63d35ea26fe7260af82ef1f","recoveryParam":1}',
+    //     hash: '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
+    // }
 ]
-
+// Fonction validé uniquement par le stacker master
 function validateBlock() {
+    console.log(pool.length + " in transactions pool") // we verify the size pool
+    console.log(JSON.stringify(pool[0]))
     let blocbuilder = []
     pool.sort(GetSortOrder("hash"))
     for (let index = 0; index < 10; index++) { // COPY x FIRSTS
@@ -139,18 +141,34 @@ function validateBlock() {
             blocbuilder.push(pool[index])
         }
     }
-    pool.splice(0, 10);
+    pool.splice(0, 10); // on supprime les 10 premiers de la pool
     blocbuilder.forEach(element => {
         console.log(verifySignature(element))
     });
+    console.log("bite")
+    blocks.get('index', function (err, value) {
+        console.log(JSON.parse(value) + " valeur de l'index")
+        if(value == undefined){
+
+            blocks.put(1, JSON.stringify(blocbuilder), function (err, value) {
+                blocks.put("index", 1, function (err, value) {
+                    if (err) return console.log('Ooops!', err) // some kind of I/O error
+                })
+                if (err) return console.log('Ooops!', err) // some kind of I/O error
+            })
+        }
+    })
+
+
 }
 
-setTimeout(() => {
+setInterval(() => {
     validateBlock()
 }, 4000);
 
 
 function verifySignature(result) {
+    console.log(result.message)
     let msgHash = sha3.keccak256(result.message)
     console.log("msghash : " + msgHash)
 
@@ -224,6 +242,8 @@ wsServer.on('request', function (request) {
                         break;
                     case "sendTransaction":
                         console.log("sendTransaction");
+                        console.log(result)
+                        console.log('cest le resultat')
                         sendTransaction(result)
                         break;
                     case "becomeStacker":
@@ -302,9 +322,13 @@ wsServer.on('request', function (request) {
                     if ((amountToSend + (amountToSend * (gazfee / 100))) <= valueInWallet) { // vérifie valeur dans wallet + gazfee suffisant
                         wallets.get(JSON.parse(result.message).toPubK, function (err, value) {
                             if (value != undefined) {
-                                var SHA256 = require("crypto-js/sha256");
-                                result.hash = SHA256(result).toString()
-                                let obj = pool.find(o => o.hash === result.hash)
+
+                                console.log("transaction before push to pool : " + JSON.stringify(result))
+                                result.hash = sha3.keccak256(JSON.stringify(result)) // on stringify la transaction et on hash la transaction stringifié
+                                console.log("transaction hash: " + result.hash)
+                                let obj = pool.find(o => o.hash === result.hash) // on vérifie qu'il y est pas de doublon dans la pool de transaction
+                                
+                        
                                 if (obj == undefined) {
                                     pool.push(result) // on push le message dans la pool de transaction
                                     connectedPeers.forEach(element => {
