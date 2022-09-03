@@ -10,7 +10,7 @@ const level = require('level')
 const wallets = level('wallets')
 const blocks = level('blocks')
 const infos = level('infos')
-const gazfee = 0.025
+const gazfee = 0.25
 const stackingmin = 1000
 let leader = false
 
@@ -38,20 +38,20 @@ let client = new WebSocketClient();
 //     //     }
 //     // });
 //     sendBecomeStacker(connection)
-//         // connection.sendUTF(JSON.stringify({type:'superbite'}))
+//         // connection.sendUTF(JSON.stringify({type:'supertest'}))
 // });
 
-wallets.put('oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk', JSON.stringify({
-    value: 1000,
-    creationDate: Date.now(),
-    lastInfoModification: Date.now(),
-    lastTransaction: {
-        block: null,
-        hash: null
-    }
-}), function (err, value) {
-    if (err) return console.log('Ooops!', err) // some kind of I/O error
-})
+// wallets.put('w6pmv3zMkXPGdwPM1ANaEPDoVVUEomsSSrECDPitPf4M', JSON.stringify({
+//     value: 25000000,
+//     creationDate: Date.now(),
+//     lastInfoModification: Date.now(),
+//     lastTransaction: {
+//         block: null,
+//         hash: null
+//     }
+// }), function (err, value) {
+//     if (err) return console.log('Ooops!', err) // some kind of I/O error
+// })
 
 
 
@@ -123,48 +123,227 @@ function GetSortOrder(prop) {
     }
 }
 pool = [
-    // {
-    //     type: 'sendTransaction',
-    //     message: '{"amountToSend":1,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1646984007351}',
-    //     signature: '{"r":"431f701f12c4e001f5803ced9607c9a32510290cbafa72e62fd2064c0cfdf81","s":"33863c35f48e695a240648751db70ff9865b7e1ec63d35ea26fe7260af82ef1f","recoveryParam":1}',
-    //     hash: '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
-    // }
+    {
+        type: 'sendTransaction',
+        message: '{"amountToSend":10,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1662057055930}',
+        signature: '{"r":"3b80b7d5b3b0e17933078379b231f9fa61bafb7819eab317fd8b489dac58b2cd","s":"8c05fd9f57ebdcb0e219734c42ab7be4ecb55d07e508f872846c53e205a63771","recoveryParam":1}',
+        hash: '1ba188cfb1af00fb1ed909ab97e23d7279518c98b090e340bc61eb39e8474f6d'
+    },
+    {
+        type: 'sendTransaction',
+        message: '{"amountToSend":10,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1662057055930}',
+        signature: '{"r":"3b80b7d5b3b0e17933078379b231f9fa61bafb7819eab317fd8b489dac58b2cd","s":"8c05fd9f57ebdcb0e219734c42ab7be4ecb55d07e508f872846c53e205a63771","recoveryParam":1}',
+        hash: '1ba188cfb1af00fb1ed909ab97e23d7279518c98b090e340bc61eb39e8474f6d'
+    }
+
 ]
 // Fonction validé uniquement par le stacker master
-function validateBlock() {
+
+
+
+
+async function validateBlock() {
+    // Initialisation du block qui sera intégré en blockchain
+    let blockPush = { blocks: [] }
+    // wallets.get("w6pmv3zMkXPGdwPM1ANaEPDoVVUEomsSSrECDPitPf4M", function (err, value) {
+    //     console.log(JSON.parse(value))
+
+    // })
+    // blocks.get(9, function (err, value) {
+    //     console.log(JSON.parse(value))
+
+    // })
+    // blocks.put(1, JSON.stringify(pool), function (err, value) {
+    //     blocks.put("index", 1, function (err, value) {
+    //         if (err) return console.log('Ooops!', err) // some kind of I/O error
+    //     })
+    //     if (err) return console.log('Ooops!', err) // some kind of I/O error
+    // })
+    // verifySignature(pool[0])
+    // let qsdfqsdf = verifySignature(pool[0])
+    // console.log(qsdfqsdf)
+
+
+
+    console.log("la pool")
+    console.log(pool)
+    //ENGLISH
+    // This function allows to get the transactions from the pool and to record them in new blocks
+    // It's the block generator
+    // Attention, the transactions are checked beforehand with the transaction pool
     console.log(pool.length + " in transactions pool") // we verify the size pool
     console.log(JSON.stringify(pool[0]))
     let blocbuilder = []
-    pool.sort(GetSortOrder("hash"))
+    pool.sort(GetSortOrder("hash")) // on tri la pool par ordre de hash
     for (let index = 0; index < 10; index++) { // COPY x FIRSTS
         if (pool[index] != undefined) {
             blocbuilder.push(pool[index])
         }
     }
+    console.log(blocbuilder)
     pool.splice(0, 10); // on supprime les 10 premiers de la pool
-    blocbuilder.forEach(element => {
-        console.log(verifySignature(element))
-    });
-    console.log("bite")
-    blocks.get('index', function (err, value) {
-        console.log(JSON.parse(value) + " valeur de l'index")
-        if(value == undefined){
 
-            blocks.put(1, JSON.stringify(blocbuilder), function (err, value) {
-                blocks.put("index", 1, function (err, value) {
+
+    // Parti vérification des wallets
+    // vérifier que l'adresse existe
+    // vérifier que le montant est disponible
+    // mettre à jour le wallet
+    for (let element of blocbuilder) {
+
+        try {
+            let addressRecovered = verifySignature(element)
+            console.log('addresse récupérée **********')
+            console.log(addressRecovered)
+            console.log('array')
+            // console.log(arr)
+            let value = await wallets.get(addressRecovered)
+            let wallet = JSON.parse(value)
+            let valueInWallet = JSON.parse(value).value
+            let amountToSend = JSON.parse(element.message).amountToSend
+            let amountToSendPlusGazFee = (amountToSend + (amountToSend * (gazfee / 100)))
+            // console.log(valueInWallet + (valueInWallet * (gazfee / 100)))
+            if (value != undefined) { // vérifie qu'il y a bien une adresse
+                if (amountToSendPlusGazFee <= valueInWallet) { // vérifie valeur dans wallet + gazfee suffisant
+                    // Récupération informations du wallet receveur
+                    console.log("element ********")
+                    let toPubk = JSON.parse(element.message).toPubK
+                    console.log(toPubk)
+                    let toPubkWallet = await wallets.get(toPubk)
+                    toPubkWallet = JSON.parse(toPubkWallet)
+                    console.log("toPubkWallet ********")
+                    console.log(toPubkWallet)
+                    toPubkWallet.value = toPubkWallet.value + amountToSend
+                    await wallets.put(toPubk, JSON.stringify(toPubkWallet))
+                    // console.log("suffisant")
+                    // console.log(amountToSendPlusGazFee)
+                    // on change la valeur en base
+                    // console.log("compte")
+                    // récupérer la nouvelle valeur
+                    wallet.value = JSON.parse((JSON.parse(value).value - amountToSendPlusGazFee).toFixed(8))
+                    // console.log("wallet value")
+                    // console.log(wallet)
+                    // envoyer en base
+                    await wallets.put(addressRecovered, JSON.stringify(wallet))
+
+                    // AJOUT DES TRANSACTIONS DANS LE BLOCK
+                    blockPush.blocks.push(element)
+
+
+                    wallets.get(addressRecovered, function (err, value) {
+                        console.log("nouvelle valeur envoyeur")
+                        console.log(JSON.parse(value))
+                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                    })
+                    wallets.get(toPubk, function (err, value) {
+                        console.log("nouvelle valeur receveur")
+                        console.log(JSON.parse(value))
+                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                    })
+                } else {
+
+                }
+            }
+        } catch (error) {
+
+        }
+    }
+
+
+    // On récupère le numéro d'indexation
+    let indexNumber = await blocks.get('index')
+
+
+    // console.log("***********ACTUAL INDEXERRERRR***********")
+    // console.log(JSON.parse(value))
+    let previousBlock = await blocks.get(indexNumber)
+    let previousBlockHash = JSON.parse(previousBlock).blockInfo.hash
+
+    if (indexNumber != undefined) {
+
+    }
+    console.log("***********BLOCKPUSH***********")
+    console.log(blockPush.blocks.length)
+    console.log(indexNumber + " valeur de l'index")
+    if (indexNumber == undefined) {
+
+        blocks.put(1, JSON.stringify(blockPush), function (err, value) {
+            blocks.put("index", 1, function (err, value) {
+                if (err) return console.log('Ooops!', err) // some kind of I/O error
+            })
+            if (err) return console.log('Ooops!', err) // some kind of I/O error
+        })
+    } else {
+        if (blockPush.blocks.length >= 1 && indexNumber != undefined) { // vérifier si il y a des transactions à ajouter
+            let newindex = JSON.parse(indexNumber) + 1
+            console.log(newindex)
+            console.log('blockPush BLOCKINFO **********')
+            // AJOUT DES INFORMATIONS DU BLOCK
+            //  = blocks.get(newindex-1)
+            // previousBlock = JSON.parse(previousBlock)
+            blockPush.blockInfo =
+            {
+                blockNumber: newindex,
+                creationDate: new Date(),
+                previouHash: previousBlockHash,
+                hash: sha3.keccak256(blockPush.blocks+previousBlockHash)
+            }
+
+            console.log(blockPush)
+            blocks.put(newindex, JSON.stringify(blockPush), function (err, value) { // on met à jour le nouveau block
+                blocks.put("index", newindex, function (err, value) { // on met à jour le nouveau index
+                    blocks.get('index', function (err, value) { // on vérifie le nouveau index
+                        console.log(JSON.parse(value) + " valeur du nouveau index") // on affiche le nouveau index
+                        blocks.get(JSON.parse(value), function (err, value) { // on récupère le dernier block
+                            console.log(JSON.parse(value) + " valeur de l'index") // on affiche le dernier block
+                            // blocks.get(newindex, function (err, value){
+                            //     // console.log(JSON.parse(value))
+                            // }) à supprimé
+                        })
+                    })
                     if (err) return console.log('Ooops!', err) // some kind of I/O error
                 })
                 if (err) return console.log('Ooops!', err) // some kind of I/O error
             })
+
+        } else if (blockPush.length >= 1 && indexNumber == undefined) {
+            //initialisation du noeud au cas il n'y aurait pas de block enregistré 
+            // donc on commence par initialisé le premier block
+            let firstindex = 1
+            blockPush.blockInfo =
+            {
+                blockNumber: newindex,
+                creationDate: new Date(),
+                hash: sha3.keccak256(blockPush.blocks)
+            }
+            blocks.put(firstindex, JSON.stringify(blockPush), function (err, value) { // on met à jour le nouveau block
+                blocks.put("index", firstindex, function (err, value) { // on met à jour le nouveau index
+                    blocks.get('index', function (err, value) { // on vérifie le nouveau index
+                        console.log(JSON.parse(value) + " valeur du nouveau index") // on affiche le nouveau index
+                        blocks.get(JSON.parse(value), function (err, value) { // on récupère le dernier block
+                            console.log(JSON.parse(value) + " valeur de l'index") // on affiche le dernier block
+                        })
+                    })
+                    if (err) return console.log('Ooops!', err) // some kind of I/O error
+                })
+                if (err) return console.log('Ooops!', err) // some kind of I/O error
+            })
+
+        } else {
+            console.log("Il n'y a aucune transactions à ajouter au prochains blocs")
         }
-    })
+
+
+    }
+
+
+
 
 
 }
 
 setInterval(() => {
     validateBlock()
-}, 4000);
+}, 1000);
 
 
 function verifySignature(result) {
@@ -240,6 +419,10 @@ wsServer.on('request', function (request) {
                         console.log('Ok on va créer un wallet');
                         verifyWallet(result)
                         break;
+                    // case "getBalance":
+                    //     console.log('on vérifie la balance');
+                    //     getBalance(result)
+                    //     break;
                     case "sendTransaction":
                         console.log("sendTransaction");
                         console.log(result)
@@ -327,8 +510,8 @@ wsServer.on('request', function (request) {
                                 result.hash = sha3.keccak256(JSON.stringify(result)) // on stringify la transaction et on hash la transaction stringifié
                                 console.log("transaction hash: " + result.hash)
                                 let obj = pool.find(o => o.hash === result.hash) // on vérifie qu'il y est pas de doublon dans la pool de transaction
-                                
-                        
+
+
                                 if (obj == undefined) {
                                     pool.push(result) // on push le message dans la pool de transaction
                                     connectedPeers.forEach(element => {

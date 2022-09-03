@@ -117,7 +117,8 @@ const { connection } = require('websocket');
 
 // Add the wallet to blockchain by signing a message
 module.exports.createWallet = function () {
-
+    let client = new WebSocketClient();
+    client.connect('ws://localhost:8080/', 'echo-protocol');
     console.log(fs.readFileSync('GIGATREEprivateKey.pem').toString('utf8'))
     client.on('connect', function (connection) {
         console.log("Connected to GIGANETWORK")
@@ -151,9 +152,15 @@ module.exports.createWallet = function () {
         });
         setTimeout(() => {
             connection.close()
+
+
+
+               
         }, 1000);
     })
 };
+
+
 
 // let client = new WebSocketClient();
 // client.connect('ws://192.168.1.13:8081/', 'echo-protocol');
@@ -258,6 +265,7 @@ module.exports.becomeStacker = function () {
         date: Date.now()
     });
 
+    
     let prepareData = {
         type: "becomeStacker",
         message: message,
@@ -266,8 +274,8 @@ module.exports.becomeStacker = function () {
     }
     client.on('connect', function (connection) {
         connection.sendUTF(JSON.stringify(prepareData))
-        // connection.close()
+        connection.close()
     })
 
-    
+
 }

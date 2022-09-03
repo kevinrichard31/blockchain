@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "tests": "node scripts/createWallet.js",
     "createWallet": "npx run-func client.js createWallet",
     "generateKeyPair": "npx run-func client.js generateKeyPair",
     "sendTransaction": "npx run-func client.js sendTransaction",
