@@ -249,91 +249,98 @@ async function validateBlock() {
     }
 
 
-    // On récupère le numéro d'indexation
-    let indexNumber = await blocks.get('index')
+    blocks.get('index', function (err, indexNumber) { // on vérifie le nouveau index
+        test(indexNumber)
+    })
 
+    async function test(indexNumber) {
+        // On récupère le numéro d'indexation
+        console.log('indexNumber*************')
+        console.log(indexNumber)
 
-    // console.log("***********ACTUAL INDEXERRERRR***********")
-    // console.log(JSON.parse(value))
-    let previousBlock = await blocks.get(indexNumber)
-    let previousBlockHash = JSON.parse(previousBlock).blockInfo.hash
-
-    if (indexNumber != undefined) {
-
-    }
-    console.log("***********BLOCKPUSH***********")
-    console.log(blockPush.blocks.length)
-    console.log(indexNumber + " valeur de l'index")
-    if (indexNumber == undefined) {
-
-        blocks.put(1, JSON.stringify(blockPush), function (err, value) {
-            blocks.put("index", 1, function (err, value) {
-                if (err) return console.log('Ooops!', err) // some kind of I/O error
-            })
-            if (err) return console.log('Ooops!', err) // some kind of I/O error
-        })
-    } else {
-        if (blockPush.blocks.length >= 1 && indexNumber != undefined) { // vérifier si il y a des transactions à ajouter
-            let newindex = JSON.parse(indexNumber) + 1
-            console.log(newindex)
-            console.log('blockPush BLOCKINFO **********')
-            // AJOUT DES INFORMATIONS DU BLOCK
-            //  = blocks.get(newindex-1)
-            // previousBlock = JSON.parse(previousBlock)
-            blockPush.blockInfo =
-            {
-                blockNumber: newindex,
-                creationDate: new Date(),
-                previouHash: previousBlockHash,
-                hash: sha3.keccak256(blockPush.blocks+previousBlockHash)
-            }
-
-            console.log(blockPush)
-            blocks.put(newindex, JSON.stringify(blockPush), function (err, value) { // on met à jour le nouveau block
-                blocks.put("index", newindex, function (err, value) { // on met à jour le nouveau index
-                    blocks.get('index', function (err, value) { // on vérifie le nouveau index
-                        console.log(JSON.parse(value) + " valeur du nouveau index") // on affiche le nouveau index
-                        blocks.get(JSON.parse(value), function (err, value) { // on récupère le dernier block
-                            console.log(JSON.parse(value) + " valeur de l'index") // on affiche le dernier block
-                            // blocks.get(newindex, function (err, value){
-                            //     // console.log(JSON.parse(value))
-                            // }) à supprimé
-                        })
-                    })
-                    if (err) return console.log('Ooops!', err) // some kind of I/O error
-                })
-                if (err) return console.log('Ooops!', err) // some kind of I/O error
-            })
-
-        } else if (blockPush.length >= 1 && indexNumber == undefined) {
-            //initialisation du noeud au cas il n'y aurait pas de block enregistré 
-            // donc on commence par initialisé le premier block
-            let firstindex = 1
-            blockPush.blockInfo =
-            {
-                blockNumber: newindex,
-                creationDate: new Date(),
-                hash: sha3.keccak256(blockPush.blocks)
-            }
-            blocks.put(firstindex, JSON.stringify(blockPush), function (err, value) { // on met à jour le nouveau block
-                blocks.put("index", firstindex, function (err, value) { // on met à jour le nouveau index
-                    blocks.get('index', function (err, value) { // on vérifie le nouveau index
-                        console.log(JSON.parse(value) + " valeur du nouveau index") // on affiche le nouveau index
-                        blocks.get(JSON.parse(value), function (err, value) { // on récupère le dernier block
-                            console.log(JSON.parse(value) + " valeur de l'index") // on affiche le dernier block
-                        })
-                    })
-                    if (err) return console.log('Ooops!', err) // some kind of I/O error
-                })
-                if (err) return console.log('Ooops!', err) // some kind of I/O error
-            })
-
-        } else {
-            console.log("Il n'y a aucune transactions à ajouter au prochains blocs")
+        // console.log("***********ACTUAL INDEXERRERRR***********")
+        // console.log(JSON.parse(value))
+        if(indexNumber >= 0){
+            let previousBlock = await blocks.get(indexNumber)
+            let previousBlockHash = JSON.parse(previousBlock).blockInfo.hash
         }
+    
+
+        console.log("***********BLOCKPUSH***********")
+        console.log(blockPush.blocks.length)
+        console.log(indexNumber + " valeur de l'index")
+        if (indexNumber == undefined) {
+
+            blocks.put(1, JSON.stringify(blockPush), function (err, value) {
+                blocks.put("index", 1, function (err, value) {
+                    if (err) return console.log('Ooops!', err) // some kind of I/O error
+                })
+                if (err) return console.log('Ooops!', err) // some kind of I/O error
+            })
+        } else {
+            if (blockPush.blocks.length >= 1 && indexNumber != undefined) { // vérifier si il y a des transactions à ajouter
+                let newindex = JSON.parse(indexNumber) + 1
+                console.log(newindex)
+                console.log('blockPush BLOCKINFO **********')
+                // AJOUT DES INFORMATIONS DU BLOCK
+                //  = blocks.get(newindex-1)
+                // previousBlock = JSON.parse(previousBlock)
+                blockPush.blockInfo =
+                {
+                    blockNumber: newindex,
+                    creationDate: new Date(),
+                    previouHash: previousBlockHash,
+                    hash: sha3.keccak256(blockPush.blocks + previousBlockHash)
+                }
+
+                console.log(blockPush)
+                blocks.put(newindex, JSON.stringify(blockPush), function (err, value) { // on met à jour le nouveau block
+                    blocks.put("index", newindex, function (err, value) { // on met à jour le nouveau index
+                        blocks.get('index', function (err, value) { // on vérifie le nouveau index
+                            console.log(JSON.parse(value) + " valeur du nouveau index") // on affiche le nouveau index
+                            blocks.get(JSON.parse(value), function (err, value) { // on récupère le dernier block
+                                console.log(JSON.parse(value) + " valeur de l'index") // on affiche le dernier block
+                                // blocks.get(newindex, function (err, value){
+                                //     // console.log(JSON.parse(value))
+                                // }) à supprimé
+                            })
+                        })
+                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                    })
+                    if (err) return console.log('Ooops!', err) // some kind of I/O error
+                })
+
+            } else if (blockPush.length >= 1 && indexNumber == undefined) {
+                //initialisation du noeud au cas il n'y aurait pas de block enregistré 
+                // donc on commence par initialisé le premier block
+                let firstindex = 1
+                blockPush.blockInfo =
+                {
+                    blockNumber: newindex,
+                    creationDate: new Date(),
+                    hash: sha3.keccak256(blockPush.blocks)
+                }
+                blocks.put(firstindex, JSON.stringify(blockPush), function (err, value) { // on met à jour le nouveau block
+                    blocks.put("index", firstindex, function (err, value) { // on met à jour le nouveau index
+                        blocks.get('index', function (err, value) { // on vérifie le nouveau index
+                            console.log(JSON.parse(value) + " valeur du nouveau index") // on affiche le nouveau index
+                            blocks.get(JSON.parse(value), function (err, value) { // on récupère le dernier block
+                                console.log(JSON.parse(value) + " valeur de l'index") // on affiche le dernier block
+                            })
+                        })
+                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                    })
+                    if (err) return console.log('Ooops!', err) // some kind of I/O error
+                })
+
+            } else {
+                console.log("Il n'y a aucune transactions à ajouter au prochains blocs")
+            }
 
 
+        }
     }
+
 
 
 
