@@ -83,22 +83,40 @@ function originIsAllowed(origin) {
     // put logic here to detect whether the specified origin is allowed.
     return true;
 }
-// setInterval(() => {
-//     AmILeader()
-//     switch (leader) {
-//         case true:
-//             break;
+setInterval(() => {
+    AmILeader()
+    switch (leader) {
+        case true:
+            console.log("[[[You are Leader !]]] You are connected as stacker ! ****Congratulations*****")
+            break;
+        case false:
+        default:
+            break;
+    }
+}, 2000);
 
-//         default:
-//             break;
-//     }
-// }, 1000);
 
+// ENVOYER SA TRANSACTION A UN AUTRE NOEUD
+// LEADER SE CONNECTE EN TANT QUE LEADER FALSE, CONFLIAT AVEC LE BECOME STACKER
 
 
 function AmILeader() {
     //  On vérifie si je suis validateur
-    stackers.includes(ip.address()) ? leader = true : leader = false
+    console.log('stackers********')
+    let obj = connectedPeers.find(o => o.ip == '127.0.0.1')
+    // console.log(connectedPeers)
+    try {
+        if(obj.ip && obj.stacking == true){
+            console.log(obj.ip)
+            leader = true
+        } else {
+            leader = false
+        }
+    } catch (error) {
+        
+    }
+    // console.log(connectedPeers)
+    // stackers.includes(ip.address()) ? leader = true : leader = false
     //     let obj = arr.find(o => o.name === 'string 1');
     // console.log(obj);
 }
@@ -166,13 +184,13 @@ async function validateBlock() {
 
 
     console.log("la pool")
-    console.log(pool)
+    // console.log(pool)
     //ENGLISH
     // This function allows to get the transactions from the pool and to record them in new blocks
     // It's the block generator
     // Attention, the transactions are checked beforehand with the transaction pool
     console.log(pool.length + " in transactions pool") // we verify the size pool
-    console.log(JSON.stringify(pool[0]))
+    // console.log(JSON.stringify(pool[0]))
     let blocbuilder = []
     pool.sort(GetSortOrder("hash")) // on tri la pool par ordre de hash
     for (let index = 0; index < 10; index++) { // COPY x FIRSTS
@@ -180,7 +198,7 @@ async function validateBlock() {
             blocbuilder.push(pool[index])
         }
     }
-    console.log(blocbuilder)
+    // console.log(blocbuilder)
     pool.splice(0, 10); // on supprime les 10 premiers de la pool
 
 
@@ -231,12 +249,12 @@ async function validateBlock() {
 
                     wallets.get(addressRecovered, function (err, value) {
                         console.log("nouvelle valeur envoyeur")
-                        console.log(JSON.parse(value))
+                        console.log(JSON.parse(value).value)
                         if (err) return console.log('Ooops!', err) // some kind of I/O error
                     })
                     wallets.get(toPubk, function (err, value) {
                         console.log("nouvelle valeur receveur")
-                        console.log(JSON.parse(value))
+                        console.log(JSON.parse(value).value)
                         if (err) return console.log('Ooops!', err) // some kind of I/O error
                     })
                 } else {
@@ -257,12 +275,16 @@ async function validateBlock() {
         // On récupère le numéro d'indexation
         console.log('indexNumber*************')
         console.log(indexNumber)
-
+        let previousBlock
+        let previousBlockHash
         // console.log("***********ACTUAL INDEXERRERRR***********")
         // console.log(JSON.parse(value))
-        if(indexNumber >= 0){
-            let previousBlock = await blocks.get(indexNumber)
-            let previousBlockHash = JSON.parse(previousBlock).blockInfo.hash
+        if(indexNumber != undefined){
+            console.log("INDEXNUMBER EST DEFINI !")
+            // console.log(indexNumber)
+            previousBlock = await blocks.get(indexNumber)
+            // console.log(previousBlock)
+            previousBlockHash = JSON.parse(previousBlock).blockInfo.hash
         }
     
 
@@ -270,7 +292,12 @@ async function validateBlock() {
         console.log(blockPush.blocks.length)
         console.log(indexNumber + " valeur de l'index")
         if (indexNumber == undefined) {
-
+            blockPush.blockInfo =
+            {
+                blockNumber: 0,
+                creationDate: new Date(),
+                hash: sha3.keccak256(blockPush.blocks)
+            }
             blocks.put(1, JSON.stringify(blockPush), function (err, value) {
                 blocks.put("index", 1, function (err, value) {
                     if (err) return console.log('Ooops!', err) // some kind of I/O error
@@ -349,8 +376,10 @@ async function validateBlock() {
 }
 
 setInterval(() => {
-    validateBlock()
-}, 1000);
+    if(leader == true){
+        validateBlock()
+    } 
+}, 4000);
 
 
 function verifySignature(result) {
@@ -379,7 +408,7 @@ function verifySignature(result) {
 let allpeers = []
 wsServer.on('request', function (request) {
     let obj = connectedPeers.find(o => o.ip == request.remoteAddress.split(":").pop())
-    console.log('pute')
+
     // Accept the connection of the nodes
     // console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
     if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true || obj != undefined) {
@@ -394,7 +423,8 @@ wsServer.on('request', function (request) {
     let connection = request.accept('echo-protocol', request.origin);
 
     let remoteIP = request.remoteAddress.split(":").pop()
-
+    console.log('remoteIP')
+    console.log(remoteIP)
 
 
     if (connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0) { // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
@@ -472,6 +502,7 @@ wsServer.on('request', function (request) {
 
 
     function becomeStacker(ip, result) {
+        console.log("*****BECOMESTACKER******")
         console.log(verifySignature(result))
         console.log(JSON.parse(result.message).date)
         console.log(Date.now() - JSON.parse(result.message).date)
@@ -484,6 +515,7 @@ wsServer.on('request', function (request) {
                     if (indexPeer >= 0 && connectedPeers[indexPeer].stacking == false) {
                         connectedPeers[indexPeer].stacking = true
                         connectedPeers[indexPeer].signature = result
+                        
                         // console.log(connectedPeers)
                         console.log("ip stacked")
                     }
@@ -524,7 +556,7 @@ wsServer.on('request', function (request) {
                                     connectedPeers.forEach(element => {
                                         console.log(element.ip)
                                         // console.log(result)
-                                        console.log('pute')
+
                                         if (element.stacking == true && element.ip != ip.address()) {
                                             element.connection.sendUTF(result)
                                         }
