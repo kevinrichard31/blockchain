@@ -100,14 +100,37 @@ setInterval(() => {
 // LEADER SE CONNECTE EN TANT QUE LEADER FALSE, CONFLIAT AVEC LE BECOME STACKER
 
 
-function AmILeader() {
+async function AmILeader() {
     //  On vérifie si je suis validateur
+
     console.log('stackers********')
     let obj = connectedPeers.find(o => o.ip == '127.0.0.1')
+    
     // console.log(connectedPeers)
     try {
-        if(obj.ip && obj.stacking == true){
-            console.log(obj.ip)
+        let walletValueChecker = []
+        for (const peer of connectedPeers) {
+            let peerSignature = verifySignature(peer.signature)
+            let peerWallet = await wallets.get(peerSignature);
+            walletValueChecker.push(
+                {
+                    ip:peer.ip,
+                    value: JSON.parse(peerWallet).value
+                }
+            )
+        }
+        let biggestStacker = walletValueChecker.reduce(
+            (prev, current) => {
+              // Changed the > to a <
+              if (current.value == undefined || current.stacking != true){
+              return prev
+              }else {
+              return prev.value > current.value ? prev : current
+              }
+            }
+        );
+        if(biggestStacker.ip == "127.0.0.1"){
+            console.log("YOU ARE LEADER")
             leader = true
         } else {
             leader = false
@@ -379,13 +402,13 @@ setInterval(() => {
     if(leader == true){
         validateBlock()
     } 
-}, 4000);
+}, 1000);
 
 
 function verifySignature(result) {
-    console.log(result.message)
+    // console.log(result.message)
     let msgHash = sha3.keccak256(result.message)
-    console.log("msghash : " + msgHash)
+    // console.log("msghash : " + msgHash)
 
     let hexToDecimal = (x) => ec.keyFromPrivate(x, "hex")
         .getPrivate().toString(10);
@@ -393,10 +416,10 @@ function verifySignature(result) {
     let pubKeyRecovered = ec.recoverPubKey(
         hexToDecimal(msgHash), JSON.parse(result.signature),
         JSON.parse(result.signature).recoveryParam, "hex");
-    console.log("Recovered pubKey:",
-        pubKeyRecovered.encodeCompressed("hex"));
+    // console.log("Recovered pubKey:",
+    //     pubKeyRecovered.encodeCompressed("hex"));
 
-    console.log("pubkeyy")
+    // console.log("pubkeyy")
 
 
     const bytes = Buffer.from(pubKeyRecovered.encodeCompressed("hex"), 'hex')
@@ -407,6 +430,9 @@ function verifySignature(result) {
 
 let allpeers = []
 wsServer.on('request', function (request) {
+    let remoteIP = request.remoteAddress.split(":").pop()
+    console.log('remoteIP')
+    console.log(remoteIP)
     let obj = connectedPeers.find(o => o.ip == request.remoteAddress.split(":").pop())
 
     // Accept the connection of the nodes
@@ -414,17 +440,17 @@ wsServer.on('request', function (request) {
     if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true || obj != undefined) {
 
         // Make sure we only accept requests from an allowed origin
-        request.reject();
-        console.log((new Date()) + ' Connection from origin ' + request.remoteAddress + ' rejected.');
-        return;
+        if(remoteIP != "127.0.0.1"){
+            request.reject();
+            console.log((new Date()) + ' Connection from origin ' + request.remoteAddress + ' rejected.');
+            return;
+        }
     }
     console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
 
     let connection = request.accept('echo-protocol', request.origin);
 
-    let remoteIP = request.remoteAddress.split(":").pop()
-    console.log('remoteIP')
-    console.log(remoteIP)
+
 
 
     if (connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0) { // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
@@ -487,12 +513,17 @@ wsServer.on('request', function (request) {
         }
     });
     connection.on('close', function (reasonCode, description) {
-        // We delete the last connection from our List of peers
+        // We delete the connection from our List of peers
         connectedPeers = connectedPeers.filter(function (o) {
             // setTimeout(() => {
             //     console.log(connectedPeers)
             // }, 1000);
-            return o.ip !== connection.remoteAddress.split(":").pop()
+            // supprimer la connection qui n'est pas égal à
+            if(o.ip == "127.0.0.1"){
+                return o
+            } else {
+                return o.ip !== connection.remoteAddress.split(":").pop()
+            }
 
         });
 

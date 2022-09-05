@@ -8,7 +8,8 @@
     "generateKeyPair": "npx run-func client.js generateKeyPair",
     "sendTransaction": "npx run-func client.js sendTransaction",
     "becomeStacker": "npx run-func client.js becomeStacker",
-    "sendBecomeStacker": "npx run-func client.js sendBecomeStacker"
+    "sendBecomeStacker": "npx run-func client.js sendBecomeStacker",
+    "test": "npx run-func client.js test"
   },
   "author": "",
   "license": "ISC",

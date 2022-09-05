@@ -181,7 +181,8 @@ function sendBecomeStacker(){
     let client = new WebSocketClient();
     client.connect('ws://localhost:8080/', 'echo-protocol');
     client.on('connect', function (connection) {
-
+        // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+        localconnect = connection 
         console.log('becommme')
         let message = JSON.stringify({
             type: 'becomeStacker',
@@ -214,7 +215,7 @@ module.exports.sendBecomeStacker = sendBecomeStacker
 // récupérer une liste de serveur et se connecter à un noeud
 
 
-
+let localconnect
 
 // signWalletAndConfirmCreation()
 module.exports.sendTransaction = function (value, toPubK) {
@@ -257,7 +258,10 @@ module.exports.sendTransaction = function (value, toPubK) {
     }
 };
 
-
+module.exports.test = function () {
+    console.log("TEST********")
+    console.log(localconnect)
+};
 
 module.exports.becomeStacker = function () {
     let message = JSON.stringify({
