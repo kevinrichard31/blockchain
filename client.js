@@ -31,23 +31,10 @@ let i = 109000
 //     signature: makeSignatureNewWallet(publicKey, privateKey)
 // }
 
-
-
-
-
-
-
 // CRYPTO ELLIPTIC gigatree process verification key pairs
-
-
-
 
 let publicKey
 let privateKey
-
-// 
-
-
 
 module.exports.generateKeyPair = function () {
     if (fs.existsSync('GIGATREEprivateKey.pem' || 'GIGATREEpublicKey.pem')) {
