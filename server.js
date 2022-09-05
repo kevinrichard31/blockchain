@@ -90,6 +90,8 @@ setInterval(() => {
             console.log("[[[You are Leader !]]] You are connected as stacker ! ****Congratulations*****")
             break;
         case false:
+            pool = [];    
+        break;
         default:
             break;
     }
