@@ -1,5 +1,5 @@
-blocks/
+# blocks/
+# wallets/
 transactions/
 indexT/
-wallets/
 infos/
