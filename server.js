@@ -108,8 +108,11 @@ async function AmILeader() {
     console.log('stackers********')
     let obj = connectedPeers.find(o => o.ip == '127.0.0.1')
     
-    // console.log(connectedPeers)
+    
     try {
+        connectedPeers.forEach(element => {
+            console.log(element.wallet + " " + element.ip + " " + element.stacking)
+        });
         let walletValueChecker = []
         for (const peer of connectedPeers) {
             let peerSignature = verifySignature(peer.signature)
@@ -452,9 +455,7 @@ wsServer.on('request', function (request) {
 
     let connection = request.accept('echo-protocol', request.origin);
 
-
-
-
+   
     if (connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0) { // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
         connectedPeers.push({ ip: request.remoteAddress.split(":").pop(), stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
     }
@@ -520,7 +521,7 @@ wsServer.on('request', function (request) {
             // setTimeout(() => {
             //     console.log(connectedPeers)
             // }, 1000);
-            // supprimer la connection qui n'est pas égal à
+            // supprimer la connection sauf si l'ip est local
             if(o.ip == "127.0.0.1"){
                 return o
             } else {
@@ -536,25 +537,39 @@ wsServer.on('request', function (request) {
 
     function becomeStacker(ip, result) {
         console.log("*****BECOMESTACKER******")
-        console.log(verifySignature(result))
-        console.log(JSON.parse(result.message).date)
-        console.log(Date.now() - JSON.parse(result.message).date)
-        if (Date.now() - JSON.parse(result.message).date < 60000) {
-            wallets.get(verifySignature(result), function (err, value) {
-                console.log(value + " fdfd")
-                if (JSON.parse(value).value >= stackingmin) {
-                    let indexPeer
-                    indexPeer = connectedPeers.findIndex((peer) => peer.ip === ip)
-                    if (indexPeer >= 0 && connectedPeers[indexPeer].stacking == false) {
-                        connectedPeers[indexPeer].stacking = true
-                        connectedPeers[indexPeer].signature = result
-                        
-                        // console.log(connectedPeers)
-                        console.log("ip stacked")
+        let indexPeer
+        indexPeer = connectedPeers.findIndex((peer) => peer.ip === ip)
+        let wallet = verifySignature(result)
+        console.log(wallet)
+        let finder = connectedPeers.find(o => o.wallet === wallet)
+        console.log("*****FINDER******")
+        if(typeof finder == 'undefined'){
+            console.log("OK PAS DE DOUBLON")
+            console.log(JSON.parse(result.message).date)
+            console.log(Date.now() - JSON.parse(result.message).date)
+            if (Date.now() - JSON.parse(result.message).date < 60000) {
+                wallets.get(verifySignature(result), function (err, value) {
+                    console.log(value + " fdfd")
+                    if (JSON.parse(value).value >= stackingmin) {
+
+                        console.log("*****indexpeer******")
+                        console.log(indexPeer)
+                        if (indexPeer >= 0 && connectedPeers[indexPeer].stacking == false) {
+                            connectedPeers[indexPeer].stacking = true
+                            connectedPeers[indexPeer].signature = result
+                            connectedPeers[indexPeer].wallet = wallet
+                            // console.log(connectedPeers)
+                            console.log("ip stacked")
+                        }
                     }
-                }
-            })
+                })
+            }
+        } else {
+            connectedPeers[indexPeer].connection.close()
+            console.log('DOUBLON !')
         }
+
+
     }
 
 

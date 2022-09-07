@@ -193,6 +193,23 @@ function sendBecomeStacker(){
 }
 module.exports.sendBecomeStacker = sendBecomeStacker
 
+
+function giveMeBlocks(){
+    let client = new WebSocketClient();
+    client.connect('ws://localhost:8080/', 'echo-protocol');
+    client.on('connect', function (connection) {
+        // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+
+        connection.sendUTF(JSON.stringify(prepareData))
+
+    });
+
+    // connection.close()
+    // walletest à supprimer delete deleted
+
+    // fin à a supprimer
+}
+module.exports.sendBecomeStacker = sendBecomeStacker
 // module.exports = {
 //     super(){
 //         console.log('boifdig')
@@ -249,24 +266,3 @@ module.exports.test = function () {
     console.log("TEST********")
     console.log(localconnect)
 };
-
-module.exports.becomeStacker = function () {
-    let message = JSON.stringify({
-        type: 'becomeStacker',
-        date: Date.now()
-    });
-
-    
-    let prepareData = {
-        type: "becomeStacker",
-        message: message,
-        signature: signMessage(message),
-        date: Date.now()
-    }
-    client.on('connect', function (connection) {
-        connection.sendUTF(JSON.stringify(prepareData))
-        connection.close()
-    })
-
-
-}
