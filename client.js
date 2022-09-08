@@ -9,9 +9,7 @@ let ec = new elliptic.ec('secp256k1');
 
 // 1) Create our database, supply location and options.
 //    This will create or open the underlying store.
-const level = require('level')
-const wallets = level('wallets')
-const blocks = level('blocks')
+
 let count = 0
 
 let i = 109000
@@ -197,7 +195,9 @@ module.exports.sendBecomeStacker = sendBecomeStacker
 // 78.201.245.32
 
 function getIndex() {
-
+    const level = require('level')
+    const wallets = level('wallets')
+    const blocks = level('blocks')
     let index
     let client = new WebSocketClient();
     client.connect('ws://78.201.245.32:8080/', 'echo-protocol');

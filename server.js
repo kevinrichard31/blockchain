@@ -44,8 +44,8 @@ let stackers = []
 //         // connection.sendUTF(JSON.stringify({type:'supertest'}))
 // });
 
-// wallets.put('w6pmv3zMkXPGdwPM1ANaEPDoVVUEomsSSrECDPitPf4M', JSON.stringify({
-//     value: 25000000,
+// wallets.put('oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk', JSON.stringify({
+//     value: 1000,
 //     creationDate: Date.now(),
 //     lastInfoModification: Date.now(),
 //     lastTransaction: {
@@ -106,6 +106,11 @@ setInterval(() => {
 
 // FONCTIONS CLIENTS
 
+async function sdf() {
+    let index = await blocks.get(1)
+    console.log(JSON.parse(index))
+}
+sdf()
 
 async function AmILeader() {
     //  On vérifie si je suis validateur
@@ -436,6 +441,7 @@ function verifySignature(result) {
     const addressRecovered = bs58.encode(bytes)
     return addressRecovered;
 }
+
 
 
 let allpeers = []
