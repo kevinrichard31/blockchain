@@ -504,14 +504,17 @@ wsServer.on('request', function (request) {
                         console.log("becomeStacker");
                         becomeStacker(connection.remoteAddress.split(":").pop(), result)
                         break;
-                    case "getBlockIndex":
+                    case "getIndex":
                         console.log("becomeStacker");
                         async function getIndex() {
                             let index = await blocks.get('index')
                             connection.sendUTF(index)
                         }
                         getIndex()
-
+                        break;
+                    case "getBlocks":
+                        console.log("getBlocks");
+                        connection.sendUTF("fdghdfghdfgh")
                         break;
                     case "killServer":
                         console.log(process.pid)
