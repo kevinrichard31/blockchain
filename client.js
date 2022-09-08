@@ -9,9 +9,9 @@ let ec = new elliptic.ec('secp256k1');
 
 // 1) Create our database, supply location and options.
 //    This will create or open the underlying store.
-// const level = require('level')
-// const wallets = level('wallets')
-// const blocks = level('blocks')
+const level = require('level')
+const wallets = level('wallets')
+const blocks = level('blocks')
 let count = 0
 
 let i = 109000
@@ -196,27 +196,36 @@ module.exports.sendBecomeStacker = sendBecomeStacker
 
 // 78.201.245.32
 
-function getBlocks() {
+function getIndex() {
 
     let index
     let client = new WebSocketClient();
-    client.connect('ws://localhost:8080/', 'echo-protocol');
+    client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
     client.on('connect', function (connection) {
         // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
 
         let prepareData = {
-            type: "getBlockIndex"
+            type: "getIndex"
         }
         connection.sendUTF(JSON.stringify(prepareData))
         connection.on('message', function (message) {
             if (message.type === 'utf8') {
-                // console.log(JSON.parse(message.utf8Data));
+                console.log(JSON.parse(message.utf8Data));
 
                 let indexFromPeer = JSON.parse(message.utf8Data)
+                console.log("MESSAGE")
                 async function asyncFunc(params) {
                     console.log(indexFromPeer)
-                    index = await blocks.get('index')
-                    console.log(index)
+                    try {
+                        index = await blocks.get('index')
+                        console.log(youu)
+                    } catch (error) {
+
+                        console.log(index == undefined)
+                        getBlocks(index, indexFromPeer)
+
+                    }
+
                 }
                 asyncFunc()
 
@@ -224,7 +233,54 @@ function getBlocks() {
         });
     });
 }
+getIndex()
+module.exports.getIndex = getIndex
 
+
+// Passer en paramètre la valeur de son index pour récupérer des blocks distants manquants
+function getBlocks(myIndex, indexPeer) {
+    console.log("FONCTION GET BLOCKS")
+    console.log(myIndex)
+    console.log(indexPeer)
+    // let index
+    // let client = new WebSocketClient();
+    // client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
+    // client.on('connect', function (connection) {
+    //     // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+
+    //     let prepareData = {
+    //         type: "getBlockIndex"
+    //     }
+    //     connection.sendUTF(JSON.stringify(prepareData))
+    //     connection.on('message', function (message) {
+    //         if (message.type === 'utf8') {
+    //             console.log(JSON.parse(message.utf8Data));
+
+    //             let indexFromPeer = JSON.parse(message.utf8Data)
+    //             console.log("MESSAGE")
+    //             async function asyncFunc(params) {
+    //                 console.log(indexFromPeer)
+    //                 try {
+    //                     index = await blocks.get('index')
+    //                     console.log(youu)
+    //                 } catch (error) {
+    //                     console.log(error)
+    //                     console.log(index == undefined)
+    //                     let prepareData = {
+    //                         type: "getBlocks",
+    //                         count: undefined
+    //                     }
+    //                     connection.sendUTF(JSON.stringify(prepareData))
+
+    //                 }
+
+    //             }
+    //             asyncFunc()
+
+    //         }
+    //     });
+    // });
+}
 module.exports.getBlocks = getBlocks
 
 
