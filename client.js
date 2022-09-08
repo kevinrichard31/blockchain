@@ -233,7 +233,7 @@ function getIndex() {
         });
     });
 }
-getIndex()
+
 module.exports.getIndex = getIndex
 
 

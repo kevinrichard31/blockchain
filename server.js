@@ -4,7 +4,7 @@
 // Attempting to change the code can get you banned from the network.
 // ************************ //
 
-let tools = require('./client.js')
+// let tools = require('./client.js')
 let process = require('process');
 let ip = require('ip');
 const level = require('level')
