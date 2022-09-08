@@ -2,16 +2,16 @@
 const crypto = require('crypto')
 const fs = require('fs')
 const bs58 = require('bs58')
-var tools = require('./client.js')
-
+let process = require('process');
 let elliptic = require('elliptic');
 let sha3 = require('js-sha3');
 let ec = new elliptic.ec('secp256k1');
+
 // 1) Create our database, supply location and options.
 //    This will create or open the underlying store.
-// const t = level('transactions')
-// const w = level('wallets')
-// const b = level('blocks')
+// const level = require('level')
+// const wallets = level('wallets')
+// const blocks = level('blocks')
 let count = 0
 
 let i = 109000
@@ -76,6 +76,7 @@ module.exports.generateKeyPair = function () {
 
 var WebSocketClient = require('websocket').client;
 const { connection } = require('websocket');
+const { BlockList } = require('net');
 
 // client.on('connectFailed', function (error) {
 //     console.log('Connect Error: ' + error.toString());
@@ -142,7 +143,7 @@ module.exports.createWallet = function () {
 
 
 
-               
+
         }, 1000);
     })
 };
@@ -164,24 +165,24 @@ function signMessage(message) {
 }
 module.exports.signMessage = signMessage
 
-function sendBecomeStacker(){
+function sendBecomeStacker() {
     let client = new WebSocketClient();
     client.connect('ws://localhost:8080/', 'echo-protocol');
     client.on('connect', function (connection) {
         // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
-        localconnect = connection 
+        localconnect = connection
         console.log('becommme')
         let message = JSON.stringify({
             type: 'becomeStacker',
             date: Date.now()
         });
-    
+
         let prepareData = {
             type: "becomeStacker",
             message: message,
             signature: signMessage(message)
         }
-    
+
         connection.sendUTF(JSON.stringify(prepareData))
 
     });
@@ -193,23 +194,61 @@ function sendBecomeStacker(){
 }
 module.exports.sendBecomeStacker = sendBecomeStacker
 
+// 78.201.245.32
 
-function giveMeBlocks(){
+function getBlocks() {
+
+    let index
     let client = new WebSocketClient();
     client.connect('ws://localhost:8080/', 'echo-protocol');
     client.on('connect', function (connection) {
         // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
 
+        let prepareData = {
+            type: "getBlockIndex"
+        }
         connection.sendUTF(JSON.stringify(prepareData))
+        connection.on('message', function (message) {
+            if (message.type === 'utf8') {
+                // console.log(JSON.parse(message.utf8Data));
 
+                let indexFromPeer = JSON.parse(message.utf8Data)
+                async function asyncFunc(params) {
+                    console.log(indexFromPeer)
+                    index = await blocks.get('index')
+                    console.log(index)
+                }
+                asyncFunc()
+
+            }
+        });
     });
-
-    // connection.close()
-    // walletest à supprimer delete deleted
-
-    // fin à a supprimer
 }
-module.exports.sendBecomeStacker = sendBecomeStacker
+
+module.exports.getBlocks = getBlocks
+
+
+function killServer() {
+    let pid
+    let client = new WebSocketClient();
+    client.connect('ws://localhost:8080/', 'echo-protocol');
+    client.on('connect', function (connection) {
+        // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+
+        let prepareData = {
+            type: "killServer"
+        }
+        connection.sendUTF(JSON.stringify(prepareData))
+        connection.on('message', function (message) {
+            if (message.type === 'utf8') {
+                console.log(JSON.parse(message.utf8Data))
+            }
+        });
+    });
+}
+
+module.exports.killServer = killServer
+
 // module.exports = {
 //     super(){
 //         console.log('boifdig')
@@ -236,7 +275,7 @@ module.exports.sendTransaction = function (value, toPubK) {
                 date: Date.now()
             });
             console.log(message)
-            
+
             prepareData = {
                 type: "sendTransaction",
                 message: message,

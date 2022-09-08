@@ -4,15 +4,18 @@
 // Attempting to change the code can get you banned from the network.
 // ************************ //
 
-var tools = require('./client.js')
-var ip = require('ip');
+let tools = require('./client.js')
+let process = require('process');
+let ip = require('ip');
 const level = require('level')
 const wallets = level('wallets')
 const blocks = level('blocks')
 const infos = level('infos')
+
 const gazfee = 0.25
 const stackingmin = 1000
 let leader = false
+
 
 
 var WebSocketServer = require('websocket').server;
@@ -27,8 +30,8 @@ let pool = []
 let stackers = []
 
 // CLIENT PART TO CONNECT TO ANOTHER NODES.
-var WebSocketClient = require('websocket').client;
-let client = new WebSocketClient();
+// var WebSocketClient = require('websocket').client;
+// let client = new WebSocketClient();
 // FONCTION A PASSER EN CLIENT
 // client.connect('ws://192.168.1.13:8080/', 'echo-protocol');
 // client.on('connect', function (connection) {
@@ -90,8 +93,8 @@ setInterval(() => {
             console.log("[[[You are Leader !]]] You are connected as stacker ! ****Congratulations*****")
             break;
         case false:
-            pool = [];    
-        break;
+            pool = [];
+            break;
         default:
             break;
     }
@@ -101,14 +104,16 @@ setInterval(() => {
 // ENVOYER SA TRANSACTION A UN AUTRE NOEUD
 // LEADER SE CONNECTE EN TANT QUE LEADER FALSE, CONFLIAT AVEC LE BECOME STACKER
 
+// FONCTIONS CLIENTS
+
 
 async function AmILeader() {
     //  On vérifie si je suis validateur
 
     console.log('stackers********')
     let obj = connectedPeers.find(o => o.ip == '127.0.0.1')
-    
-    
+
+
     try {
         connectedPeers.forEach(element => {
             console.log(element.wallet + " " + element.ip + " " + element.stacking)
@@ -119,29 +124,29 @@ async function AmILeader() {
             let peerWallet = await wallets.get(peerSignature);
             walletValueChecker.push(
                 {
-                    ip:peer.ip,
+                    ip: peer.ip,
                     value: JSON.parse(peerWallet).value
                 }
             )
         }
         let biggestStacker = walletValueChecker.reduce(
             (prev, current) => {
-              // Changed the > to a <
-              if (current.value == undefined || current.stacking != true){
-              return prev
-              }else {
-              return prev.value > current.value ? prev : current
-              }
+                // Changed the > to a <
+                if (current.value == undefined || current.stacking != true) {
+                    return prev
+                } else {
+                    return prev.value > current.value ? prev : current
+                }
             }
         );
-        if(biggestStacker.ip == "127.0.0.1"){
+        if (biggestStacker.ip == "127.0.0.1") {
             console.log("YOU ARE LEADER")
             leader = true
         } else {
             leader = false
         }
     } catch (error) {
-        
+
     }
     // console.log(connectedPeers)
     // stackers.includes(ip.address()) ? leader = true : leader = false
@@ -307,14 +312,14 @@ async function validateBlock() {
         let previousBlockHash
         // console.log("***********ACTUAL INDEXERRERRR***********")
         // console.log(JSON.parse(value))
-        if(indexNumber != undefined){
+        if (indexNumber != undefined) {
             console.log("INDEXNUMBER EST DEFINI !")
             // console.log(indexNumber)
             previousBlock = await blocks.get(indexNumber)
             // console.log(previousBlock)
             previousBlockHash = JSON.parse(previousBlock).blockInfo.hash
         }
-    
+
 
         console.log("***********BLOCKPUSH***********")
         console.log(blockPush.blocks.length)
@@ -404,9 +409,9 @@ async function validateBlock() {
 }
 
 setInterval(() => {
-    if(leader == true){
+    if (leader == true) {
         validateBlock()
-    } 
+    }
 }, 1000);
 
 
@@ -445,7 +450,7 @@ wsServer.on('request', function (request) {
     if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true || obj != undefined) {
 
         // Make sure we only accept requests from an allowed origin
-        if(remoteIP != "127.0.0.1"){
+        if (remoteIP != "127.0.0.1") {
             request.reject();
             console.log((new Date()) + ' Connection from origin ' + request.remoteAddress + ' rejected.');
             return;
@@ -455,7 +460,7 @@ wsServer.on('request', function (request) {
 
     let connection = request.accept('echo-protocol', request.origin);
 
-   
+
     if (connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0) { // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
         connectedPeers.push({ ip: request.remoteAddress.split(":").pop(), stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
     }
@@ -499,6 +504,20 @@ wsServer.on('request', function (request) {
                         console.log("becomeStacker");
                         becomeStacker(connection.remoteAddress.split(":").pop(), result)
                         break;
+                    case "getBlockIndex":
+                        console.log("becomeStacker");
+                        async function getIndex() {
+                            let index = await blocks.get('index')
+                            connection.sendUTF(index)
+                        }
+                        getIndex()
+
+                        break;
+                    case "killServer":
+                        console.log(process.pid)
+                        connection.sendUTF(process.pid)
+                        // process.kill(process.pid)
+                        break;
                     default:
                         console.log(`Sorry, ${result.type} doesn't exist`);
                 }
@@ -522,7 +541,7 @@ wsServer.on('request', function (request) {
             //     console.log(connectedPeers)
             // }, 1000);
             // supprimer la connection sauf si l'ip est local
-            if(o.ip == "127.0.0.1"){
+            if (o.ip == "127.0.0.1") {
                 return o
             } else {
                 return o.ip !== connection.remoteAddress.split(":").pop()
@@ -543,7 +562,7 @@ wsServer.on('request', function (request) {
         console.log(wallet)
         let finder = connectedPeers.find(o => o.wallet === wallet)
         console.log("*****FINDER******")
-        if(typeof finder == 'undefined'){
+        if (typeof finder == 'undefined') {
             console.log("OK PAS DE DOUBLON")
             console.log(JSON.parse(result.message).date)
             console.log(Date.now() - JSON.parse(result.message).date)
