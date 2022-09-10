@@ -210,24 +210,18 @@ function getIndex() {
         connection.sendUTF(JSON.stringify(prepareData))
         connection.on('message', function (message) {
             if (message.type === 'utf8') {
-                console.log(JSON.parse(message.utf8Data));
-
                 let indexFromPeer = JSON.parse(message.utf8Data)
-                console.log("MESSAGE")
-                async function asyncFunc(params) {
-                    console.log(indexFromPeer)
-                    try {
-                        index = await blocks.get('index')
-                        console.log(youu)
-                    } catch (error) {
+                console.log("INDEX DU PEER")
+                console.log(indexFromPeer)
 
-                        console.log(index == undefined)
-                        getBlocks(index, indexFromPeer)
-
-                    }
-
-                }
-                asyncFunc()
+                blocks.get('index',function (err, value) {
+                    console.log("MON INDEX")
+                        console.log(value)
+                        if(value == undefined){
+                            getBlocks(value, indexFromPeer)
+                        }
+                })
+                
 
             }
         });
@@ -239,6 +233,7 @@ module.exports.getIndex = getIndex
 
 // Passer en paramètre la valeur de son index pour récupérer des blocks distants manquants
 function getBlocks(myIndex, indexPeer) {
+
     console.log("FONCTION GET BLOCKS")
     console.log(myIndex)
     console.log(indexPeer)
