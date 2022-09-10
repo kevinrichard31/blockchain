@@ -6,14 +6,14 @@ const infos = level('infos')
 
 
 blocks.get('index', function (err, value) { // on vérifie le nouveau index
-    console.log(value + " valeur du nouveau index") // on affiche le nouveau index
-    test()
+    console.log(value) // on affiche le nouveau index
 })
 
-async function test() {
-    await blocks.put('index', 1)
-    let result = await blocks.get('index')
-    console.log(JSON.parse(result))
+// async function test() {
+//     await blocks.put('index', 1)
+//     let result = await blocks.get('index')
+//     console.log(JSON.parse(result))
 
-}
+// }
+
 
