@@ -193,11 +193,11 @@ function sendBecomeStacker() {
 module.exports.sendBecomeStacker = sendBecomeStacker
 
 // 78.201.245.32
-
+const level = require('level')
+const wallets = level('wallets')
+const blocks = level('blocks')
 function getIndex() {
-    const level = require('level')
-    const wallets = level('wallets')
-    const blocks = level('blocks')
+
     let index
     let client = new WebSocketClient();
     client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
@@ -214,20 +214,21 @@ function getIndex() {
                 console.log("INDEX DU PEEdRs")
                 console.log(indexFromPeer)
 
-                blocks.get('index',function (err, value) {
+                blocks.get('index', function (err, value) {
                     console.log("MON INDEX")
-                        console.log(value)
-                        if(value == undefined){
-                            getBlocks(value, indexFromPeer)
-                        }
+                    console.log(value)
+                    if (value == undefined) {
+                        getBlocks(value, indexFromPeer)
+                        connection.close()
+                    }
                 })
-                
+
 
             }
         });
     });
 }
-
+getIndex()
 module.exports.getIndex = getIndex
 
 
@@ -237,44 +238,77 @@ function getBlocks(myIndex, indexPeer) {
     console.log("FONCTION GET BLOCKS")
     console.log(myIndex)
     console.log(indexPeer)
-    // let index
-    // let client = new WebSocketClient();
-    // client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
-    // client.on('connect', function (connection) {
-    //     // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+    let client = new WebSocketClient();
+    client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
+    client.on('connect', function (connection) {
+        // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+        console.log("BIIITCH")
+        let prepareData = {
+            type: "getBlocks",
+            myIndex: myIndex,
+            indexNeeded: indexPeer
+        }
+        let newArr = []
 
-    //     let prepareData = {
-    //         type: "getBlockIndex"
-    //     }
-    //     connection.sendUTF(JSON.stringify(prepareData))
-    //     connection.on('message', function (message) {
-    //         if (message.type === 'utf8') {
-    //             console.log(JSON.parse(message.utf8Data));
+        if (myIndex == undefined) {
+            for (let index = 0; index <= indexPeer; index++) {
+                newArr.push(index)
+                console.log(newArr)
+                prepareData.getBlocks = newArr
 
-    //             let indexFromPeer = JSON.parse(message.utf8Data)
-    //             console.log("MESSAGE")
-    //             async function asyncFunc(params) {
-    //                 console.log(indexFromPeer)
-    //                 try {
-    //                     index = await blocks.get('index')
-    //                     console.log(youu)
-    //                 } catch (error) {
-    //                     console.log(error)
-    //                     console.log(index == undefined)
-    //                     let prepareData = {
-    //                         type: "getBlocks",
-    //                         count: undefined
-    //                     }
-    //                     connection.sendUTF(JSON.stringify(prepareData))
+            }
+            connection.sendUTF(JSON.stringify(prepareData))
+        } else if (myIndex >= 0) {
+            for (let index = myIndex + 1; index <= indexPeer; index++) {
+                newArr.push(index)
+                prepareData.getBlocks = newArr
 
-    //                 }
+                console.log(newArr)
+            }
+            connection.sendUTF(JSON.stringify(prepareData))
+        }
 
-    //             }
-    //             asyncFunc()
+        connection.on('message', function (message) {
 
-    //         }
-    //     });
-    // });
+            if (message.type === 'utf8') {
+                let result = JSON.parse(message.utf8Data)
+                // console.log(JSON.parse(result))
+                result.forEach(element => {
+                    // console.log(JSON.parse(element))
+                    let blockParsed = JSON.parse(element)
+                    blocks.put(blockParsed.blockInfo.blockNumber, JSON.stringify(blockParsed), function (err, value) {
+                        console.log("block ajouté")
+                        blocks.get(blockParsed.blockInfo.blockNumber, function(err, value){
+                            console.log(JSON.parse(value))
+                        })
+                    })
+                });
+
+
+            }
+        });
+
+        // connection.sendUTF(JSON.stringify(prepareData))
+        // connection.on('message', function (message) {
+        //     if (message.type === 'utf8') {
+        //         let indexFromPeer = JSON.parse(message.utf8Data)
+        //         console.log("INDEX DU PEEdRs")
+        //         console.log(indexFromPeer)
+
+        //         blocks.get('index',function (err, value) {
+        //             console.log("MON INDEX")
+        //                 console.log(value)
+        //                 if(value == undefined){
+        //                     getBlocks(value, indexFromPeer)
+        //                 }
+        //         })
+
+
+        //     }
+        // });
+    });
+
+
 }
 module.exports.getBlocks = getBlocks
 
