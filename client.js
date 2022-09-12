@@ -273,16 +273,36 @@ function getBlocks(myIndex, indexPeer) {
             if (message.type === 'utf8') {
                 let result = JSON.parse(message.utf8Data)
                 // console.log(JSON.parse(result))
-                result.forEach(element => {
-                    // console.log(JSON.parse(element))
-                    let blockParsed = JSON.parse(element)
-                    blocks.put(blockParsed.blockInfo.blockNumber, JSON.stringify(blockParsed), function (err, value) {
-                        console.log("block ajouté")
-                        blocks.get(blockParsed.blockInfo.blockNumber, function(err, value){
-                            console.log(JSON.parse(value))
-                        })
-                    })
-                });
+                let previousHash
+
+
+                for (let index = 0; index < result.length; index++) {
+                    const element = JSON.parse(result[index])
+                    if (element.blockInfo.blockNumber > 0) {
+
+                        // let hash = sha3.keccak256(blockParsed.blocks + blockParsed.blockInfo.previousHash)
+                        let previousHash = JSON.parse(result[index - 1]).blockInfo.hash
+                        console.log(previousHash)
+                    }
+                }
+                // result.forEach(element => {
+                //     // console.log(JSON.parse(element))
+                //     let blockParsed = JSON.parse(element)
+                //     previousHash = blockParsed.blockInfo.hash
+                //     if(blockParsed.blockInfo.blockNumber > 0) {
+
+                //         let hash = sha3.keccak256(blockParsed.blocks + blockParsed.blockInfo.previousHash)
+                //         // console.log(hash == blockParsed.blockInfo.hash)
+                //     }
+
+
+                //     blocks.put(blockParsed.blockInfo.blockNumber, JSON.stringify(blockParsed), function (err, value) {
+                //         console.log("block ajouté")
+                //         blocks.get(blockParsed.blockInfo.blockNumber, function(err, value){
+                //             // console.log(JSON.parse(value))
+                //         })
+                //     })
+                // });
 
 
             }
