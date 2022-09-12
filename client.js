@@ -235,7 +235,7 @@ module.exports.getIndex = getIndex
 // Passer en paramètre la valeur de son index pour récupérer des blocks distants manquants
 function getBlocks(myIndex, indexPeer) {
 
-    console.log("FONCTION GET BLOCKSp")
+    console.log("FONCTION GET BLOCKSph")
     console.log(myIndex)
     console.log(indexPeer)
     let client = new WebSocketClient();
