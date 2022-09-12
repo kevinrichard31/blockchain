@@ -211,7 +211,7 @@ function getIndex() {
         connection.on('message', function (message) {
             if (message.type === 'utf8') {
                 let indexFromPeer = JSON.parse(message.utf8Data)
-                console.log("INDEX DU PEEdRs")
+                console.log("INDEX DU PEEdRsd")
                 console.log(indexFromPeer)
 
                 blocks.get('index', function (err, value) {
