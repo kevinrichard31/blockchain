@@ -173,6 +173,10 @@ let p = [{
 
 ]
 
+blocks.get(3, function (err, indexNumber) {
+    console.log(indexNumber)
+})
+
 function GetSortOrder(prop) {
     return function (a, b) {
         if (a[prop] > b[prop]) {
@@ -308,6 +312,7 @@ async function validateBlock() {
 
         }
     }
+
 
 
     blocks.get('index', function (err, indexNumber) { // on vérifie le nouveau index
