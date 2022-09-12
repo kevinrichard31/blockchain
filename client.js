@@ -193,11 +193,11 @@ function sendBecomeStacker() {
 module.exports.sendBecomeStacker = sendBecomeStacker
 
 // 78.201.245.32
-const level = require('level')
-const wallets = level('wallets')
-const blocks = level('blocks')
-function getIndex() {
 
+function getIndex() {
+    const level = require('level')
+    const wallets = level('wallets')
+    const blocks = level('blocks')
     let index
     let client = new WebSocketClient();
     client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
@@ -242,7 +242,6 @@ function getBlocks(myIndex, indexPeer) {
     client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
     client.on('connect', function (connection) {
         // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
-        console.log("BIIITCH")
         let prepareData = {
             type: "getBlocks",
             myIndex: myIndex,
@@ -275,14 +274,19 @@ function getBlocks(myIndex, indexPeer) {
                 // console.log(JSON.parse(result))
                 let previousHash
 
-
+// On vérifie l'intégrité du bloc avec l'ancien hash + formule hashage block
                 for (let index = 0; index < result.length; index++) {
                     const element = JSON.parse(result[index])
                     if (element.blockInfo.blockNumber > 0) {
-
+                        let previousHash = ""
                         // let hash = sha3.keccak256(blockParsed.blocks + blockParsed.blockInfo.previousHash)
-                        let previousHash = JSON.parse(result[index - 1]).blockInfo.hash
-                        console.log(previousHash)
+                        previousHash = JSON.parse(result[index - 1]).blockInfo.hash
+                        // console.log(previousHash)
+                        // console.log(element.blockInfo.blockNumber)
+                        // console.log(element.blockInfo.hash)
+                        // console.log(sha3.keccak256(element.blocks + previousHash))
+                        let test = sha3.keccak256(element.blocks + previousHash)
+                        console.log(test)
                     }
                 }
                 // result.forEach(element => {
