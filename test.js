@@ -1,19 +1,28 @@
-const level = require('level')
-const wallets = level('wallets')
-const blocks = level('blocks')
-const infos = level('infos')
+const { Level } = require('level')
 
 
 
-blocks.get('index', function (err, value) { // on vérifie le nouveau index
-    console.log(value) // on affiche le nouveau index
-})
+async function dsfg() {
+    // Create a database
+const db = new Level('example', { valueEncoding: 'json' })
 
-// async function test() {
-//     await blocks.put('index', 1)
-//     let result = await blocks.get('index')
-//     console.log(JSON.parse(result))
+await db.put('a', 1)
 
-// }
+// Add multiple entries
+await db.batch([{ type: 'put', key: 'b', value: 2 }])
+
+// Get value of key 'a': 1
+
+try {
+    const value = await db.get('f')
+    console.log(value)
+} catch (error) {
+    console.log(error)
+    if(error){
+        console.log("bite")
+    }
+}
 
 
+}
+dsfg()

@@ -506,7 +506,12 @@ wsServer.on('request', function (request) {
                         break;
                     case "getBlocks":
                         console.log("getBlocks");
-                        connection.sendUTF("fdghdfghdfgh")
+                        console.log(result.getBlocks)
+                        blocks.getMany(result.getBlocks, function (err, value) {
+                            console.log(value)
+                            connection.sendUTF(JSON.stringify(value))
+                        })
+                        
                         break;
                     case "killServer":
                         console.log(process.pid)
