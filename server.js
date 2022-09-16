@@ -112,7 +112,7 @@ setInterval(() => {
 //     let index = await blocks.get(1)
 //     console.log(JSON.parse(index))
 // } catch (error) {
-    
+
 // }
 // }
 // sdf()
@@ -173,9 +173,16 @@ let p = [{
 
 ]
 
-blocks.get(3, function (err, indexNumber) {
-    console.log(indexNumber)
-})
+// blocks.get(1, function (err, indexNumber) {
+//     let result = JSON.parse(indexNumber)
+//     console.log(result.blockInfo.hash)
+//     blocks.get(2, function (err, resulttwo) {
+//         let resultwoparsed = JSON.parse(resulttwo)
+//         console.log(resultwoparsed.blockInfo.hash)
+//         let hashblock = sha3.keccak256(resultwoparsed.blocks + result)
+//         console.log(hashblock)
+//     })
+// })
 
 function GetSortOrder(prop) {
     return function (a, b) {
@@ -188,18 +195,18 @@ function GetSortOrder(prop) {
     }
 }
 pool = [
-    {
-        type: 'sendTransaction',
-        message: '{"amountToSend":10,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1662057055930}',
-        signature: '{"r":"3b80b7d5b3b0e17933078379b231f9fa61bafb7819eab317fd8b489dac58b2cd","s":"8c05fd9f57ebdcb0e219734c42ab7be4ecb55d07e508f872846c53e205a63771","recoveryParam":1}',
-        hash: '1ba188cfb1af00fb1ed909ab97e23d7279518c98b090e340bc61eb39e8474f6d'
-    },
-    {
-        type: 'sendTransaction',
-        message: '{"amountToSend":10,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1662057055930}',
-        signature: '{"r":"3b80b7d5b3b0e17933078379b231f9fa61bafb7819eab317fd8b489dac58b2cd","s":"8c05fd9f57ebdcb0e219734c42ab7be4ecb55d07e508f872846c53e205a63771","recoveryParam":1}',
-        hash: '1ba188cfb1af00fb1ed909ab97e23d7279518c98b090e340bc61eb39e8474f6d'
-    }
+    // {
+    //     type: 'sendTransaction',
+    //     message: '{"amountToSend":10,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1662057055930}',
+    //     signature: '{"r":"3b80b7d5b3b0e17933078379b231f9fa61bafb7819eab317fd8b489dac58b2cd","s":"8c05fd9f57ebdcb0e219734c42ab7be4ecb55d07e508f872846c53e205a63771","recoveryParam":1}',
+    //     hash: '1ba188cfb1af00fb1ed909ab97e23d7279518c98b090e340bc61eb39e8474f6d'
+    // },
+    // {
+    //     type: 'sendTransaction',
+    //     message: '{"amountToSend":10,"toPubK":"oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk","type":"sendTransaction","date":1662057055930}',
+    //     signature: '{"r":"3b80b7d5b3b0e17933078379b231f9fa61bafb7819eab317fd8b489dac58b2cd","s":"8c05fd9f57ebdcb0e219734c42ab7be4ecb55d07e508f872846c53e205a63771","recoveryParam":1}',
+    //     hash: '1ba188cfb1af00fb1ed909ab97e23d7279518c98b090e340bc61eb39e8474f6d'
+    // }
 
 ]
 // Fonction validé uniquement par le stacker master
@@ -316,7 +323,7 @@ async function validateBlock() {
 
 
     blocks.get('index', function (err, indexNumber) { // on vérifie le nouveau index
-        
+
         // On récupère le numéro d'indexation
         console.log('indexNumber*************')
         console.log(indexNumber)
@@ -325,17 +332,16 @@ async function validateBlock() {
         // console.log("***********ACTUAL INDEXERRERRR***********")
         // console.log(JSON.parse(value))
 
-        
+
 
         if (indexNumber != undefined) {
             console.log("INDEXNUMBER a deja une valeur !")
             // console.log(indexNumber)
 
             blocks.get(indexNumber, function (err, result) {
-                previousBlock = result
-                if(indexNumber > 0){
-                    previousBlockHash = JSON.parse(previousBlock).blockInfo.hash
-                }
+                previousBlock = JSON.parse(result)
+                previousBlockHash = previousBlock.blockInfo.hash
+
                 if (blockPush.blocks.length >= 1 && indexNumber != undefined) { // vérifier si il y a des transactions à ajouter
                     let newindex = JSON.parse(indexNumber) + 1
                     console.log(newindex)
@@ -350,7 +356,7 @@ async function validateBlock() {
                         previouHash: previousBlockHash,
                         hash: sha3.keccak256(blockPush.blocks + previousBlockHash)
                     }
-    
+
                     // console.log(blockPush)
                     blocks.put(newindex, JSON.stringify(blockPush), function (err, value) { // on met à jour le nouveau block
                         blocks.put("index", newindex, function (err, value) { // on met à jour le nouveau index
@@ -364,12 +370,12 @@ async function validateBlock() {
                         })
                         if (err) return console.log('Ooops!', err) // some kind of I/O error
                     })
-    
+
                 }
             })
             // console.log(previousBlock)
-            
-        } else if(indexNumber == undefined) {
+
+        } else if (indexNumber == undefined) {
             if (blockPush.blocks.length >= 1 && indexNumber == undefined) {
                 blockPush.blockInfo =
                 {
@@ -388,14 +394,14 @@ async function validateBlock() {
                     if (err) return console.log('Ooops!', err) // some kind of I/O error
                 })
             }
-        } 
-        
+        }
+
     })
 
 
-    
-        
-  
+
+
+
 
 
 
@@ -516,7 +522,7 @@ wsServer.on('request', function (request) {
                             console.log(value)
                             connection.sendUTF(JSON.stringify(value))
                         })
-                        
+
                         break;
                     case "killServer":
                         console.log(process.pid)
