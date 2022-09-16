@@ -228,7 +228,7 @@ function getIndex() {
         });
     });
 }
-getIndex()
+// getIndex()
 module.exports.getIndex = getIndex
 
 
