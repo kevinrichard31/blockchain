@@ -211,18 +211,17 @@ function getIndex() {
         connection.on('message', function (message) {
             if (message.type === 'utf8') {
                 let indexFromPeer = JSON.parse(message.utf8Data)
-                console.log("INDEX DU PEEdRsd")
+                console.log("INDEX DU PEER")
                 console.log(indexFromPeer)
 
                 blocks.get('index', function (err, value) {
                     console.log("MON INDEX")
                     console.log(value)
                     if (value == undefined) {
-                        getBlocks(value, indexFromPeer)
+                        getBlocks(value, indexFromPeer, level, wallets, blocks)
                         connection.close()
                     }
                 })
-
 
             }
         });
@@ -233,9 +232,9 @@ module.exports.getIndex = getIndex
 
 
 // Passer en paramètre la valeur de son index pour récupérer des blocks distants manquants
-function getBlocks(myIndex, indexPeer) {
+function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
 
-    console.log("FONCTION GET BLOCKSphdf")
+    console.log("FONCTION GET BLOCKS")
     console.log(myIndex)
     console.log(indexPeer)
     let client = new WebSocketClient();
@@ -274,62 +273,44 @@ function getBlocks(myIndex, indexPeer) {
                 // console.log(JSON.parse(result))
                 let previousHash
 
-// On vérifie l'intégrité du bloc avec l'ancien hash + formule hashage block
+                // On vérifie l'intégrité du bloc avec l'ancien hash + formule hashage block
                 for (let index = 0; index < result.length; index++) {
                     const element = JSON.parse(result[index])
+                    if(element.blockInfo.blockNumber == 0){
+                        blocks.put(0, JSON.stringify(element), function (err, value) {
+                            console.log("block 0 ajouté")
+                        })
+                    }
                     if (element.blockInfo.blockNumber > 0) {
                         let previousHash = ""
                         // let hash = sha3.keccak256(blockParsed.blocks + blockParsed.blockInfo.previousHash)
                         previousHash = JSON.parse(result[index - 1]).blockInfo.hash
-                        // console.log(previousHash)
+                        // console.log(result[index-1])
                         // console.log(element.blockInfo.blockNumber)
-                        // console.log(element.blockInfo.hash)
+                        console.log(element.blockInfo.hash)
                         // console.log(sha3.keccak256(element.blocks + previousHash))
                         let test = sha3.keccak256(element.blocks + previousHash)
-                        console.log(test)
+                        console.log(test == element.blockInfo.hash)
+                        console.log(result.length)
+                        if (test == element.blockInfo.hash) {
+                            blocks.put(element.blockInfo.blockNumber, JSON.stringify(element), function (err, value) {
+                                console.log("block ajouté")
+                            })
+                        }
+                        if (index == result.length - 1) {
+                            console.log("Boucle terminée on execute cette fonction")
+                            blocks.put("index", index, function (err, value) {
+                                console.log("index ajouté " + index)
+                            })
+                        }
                     }
                 }
-                // result.forEach(element => {
-                //     // console.log(JSON.parse(element))
-                //     let blockParsed = JSON.parse(element)
-                //     previousHash = blockParsed.blockInfo.hash
-                //     if(blockParsed.blockInfo.blockNumber > 0) {
 
-                //         let hash = sha3.keccak256(blockParsed.blocks + blockParsed.blockInfo.previousHash)
-                //         // console.log(hash == blockParsed.blockInfo.hash)
-                //     }
-
-
-                //     blocks.put(blockParsed.blockInfo.blockNumber, JSON.stringify(blockParsed), function (err, value) {
-                //         console.log("block ajouté")
-                //         blocks.get(blockParsed.blockInfo.blockNumber, function(err, value){
-                //             // console.log(JSON.parse(value))
-                //         })
-                //     })
-                // });
 
 
             }
         });
 
-        // connection.sendUTF(JSON.stringify(prepareData))
-        // connection.on('message', function (message) {
-        //     if (message.type === 'utf8') {
-        //         let indexFromPeer = JSON.parse(message.utf8Data)
-        //         console.log("INDEX DU PEEdRs")
-        //         console.log(indexFromPeer)
-
-        //         blocks.get('index',function (err, value) {
-        //             console.log("MON INDEX")
-        //                 console.log(value)
-        //                 if(value == undefined){
-        //                     getBlocks(value, indexFromPeer)
-        //                 }
-        //         })
-
-
-        //     }
-        // });
     });
 
 
