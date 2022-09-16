@@ -217,7 +217,7 @@ function getIndex() {
                 blocks.get('index', function (err, value) {
                     console.log("MON INDEX")
                     console.log(value)
-                    if (value == undefined) {
+                    if (value == undefined || indexFromPeer > value) {
                         getBlocks(value, indexFromPeer, level, wallets, blocks)
                         connection.close()
                     }
@@ -257,12 +257,21 @@ function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
             }
             connection.sendUTF(JSON.stringify(prepareData))
         } else if (myIndex >= 0) {
-            for (let index = myIndex + 1; index <= indexPeer; index++) {
-                newArr.push(index)
+            // for (let index = myIndex + 1; index <= indexPeer; index++) {
+            //     newArr.push(index)
+            //     prepareData.getBlocks = newArr
+
+            //     console.log(newArr)
+            // }
+
+            for (let index = myIndex; index < indexPeer; index++) {
+                newArr.push(JSON.parse(index) + 1)
                 prepareData.getBlocks = newArr
 
                 console.log(newArr)
             }
+
+            console.log(prepareData)
             connection.sendUTF(JSON.stringify(prepareData))
         }
 
@@ -271,40 +280,94 @@ function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
             if (message.type === 'utf8') {
                 let result = JSON.parse(message.utf8Data)
                 // console.log(JSON.parse(result))
-                let previousHash
 
-                // On vérifie l'intégrité du bloc avec l'ancien hash + formule hashage block
-                for (let index = 0; index < result.length; index++) {
-                    const element = JSON.parse(result[index])
-                    if(element.blockInfo.blockNumber == 0){
-                        blocks.put(0, JSON.stringify(element), function (err, value) {
-                            console.log("block 0 ajouté")
-                        })
+
+
+
+                // LOGIQUE 0 BLOCKS
+                if (JSON.parse(result[0]).blockInfo.blockNumber == 0) {
+                    // On vérifie l'intégrité du bloc avec l'ancien hash + formule hashage block
+                    for (let index = 0; index < result.length; index++) {
+                        setTimeout(() => {
+                            const element = JSON.parse(result[index])
+                            if (element.blockInfo.blockNumber == 0) {
+                                blocks.put(0, JSON.stringify(element), function (err, value) {
+                                    console.log("block 0 ajouté")
+                                })
+                            }
+                            if (element.blockInfo.blockNumber > 0) {
+                                let previousHash = ""
+                                // let hash = sha3.keccak256(blockParsed.blocks + blockParsed.blockInfo.previousHash)
+                                previousHash = JSON.parse(result[index - 1]).blockInfo.hash
+                                // console.log(result[index-1])
+                                // console.log(element.blockInfo.blockNumber)
+                                console.log("**********HASH DU BLOCK**********")
+                                console.log(element.blockInfo.hash)
+                                // console.log(sha3.keccak256(element.blocks + previousHash))
+                                let test = sha3.keccak256(element.blocks + previousHash)
+                                console.log(test == element.blockInfo.hash)
+                                // console.log(result.length)
+                                if (test == element.blockInfo.hash) {
+                                    blocks.put(element.blockInfo.blockNumber, JSON.stringify(element), function (err, value) {
+                                        console.log("block ajouté N°" + element.blockInfo.blockNumber)
+                                    })
+                                }
+                                if (index == result.length - 1) {
+                                    console.log("Boucle terminée avec succès, mise à jour de l'index ...")
+                                    setTimeout(() => {
+                                        blocks.put("index", index, function (err, value) {
+                                            console.log("index mis à jour " + index)
+                                        })
+                                    }, 1000);
+                                }
+                            }
+                        }, index * 100);
+
                     }
-                    if (element.blockInfo.blockNumber > 0) {
-                        let previousHash = ""
-                        // let hash = sha3.keccak256(blockParsed.blocks + blockParsed.blockInfo.previousHash)
-                        previousHash = JSON.parse(result[index - 1]).blockInfo.hash
-                        // console.log(result[index-1])
-                        // console.log(element.blockInfo.blockNumber)
-                        console.log(element.blockInfo.hash)
-                        // console.log(sha3.keccak256(element.blocks + previousHash))
-                        let test = sha3.keccak256(element.blocks + previousHash)
-                        console.log(test == element.blockInfo.hash)
-                        console.log(result.length)
-                        if (test == element.blockInfo.hash) {
-                            blocks.put(element.blockInfo.blockNumber, JSON.stringify(element), function (err, value) {
-                                console.log("block ajouté")
-                            })
-                        }
-                        if (index == result.length - 1) {
-                            console.log("Boucle terminée on execute cette fonction")
-                            blocks.put("index", index, function (err, value) {
-                                console.log("index ajouté " + index)
-                            })
-                        }
-                    }
+                } else {
+                    console.log("BLOCKS ARE ALREADY ADDED, ADD NEW PROCESS")
+                    blocks.get(JSON.parse(result[0]).blockInfo.blockNumber - 1, function (err, resultLastBlock) {
+                        // console.log(JSON.parse(resultLastBlock))
+                        let lastBlock = JSON.parse(resultLastBlock)
+                        result.forEach((element, index) => {
+                            if (index == 0) {
+                                let parsedBlock = JSON.parse(element)
+                                // console.log(parsedBlock)
+
+                                let test = sha3.keccak256(parsedBlock.blocks + lastBlock.blockInfo.hash)
+                                if (test == parsedBlock.blockInfo.hash) {
+                                    blocks.put(parsedBlock.blockInfo.blockNumber, JSON.stringify(parsedBlock), function (err, value) {
+                                        console.log("block ajouté " + parsedBlock.blockInfo.blockNumber)
+                                    })
+                                }
+                                if (index == result.length - 1) {
+                                    console.log("Boucle terminée on execute cette fonction")
+                                    blocks.put("index", parsedBlock.blockInfo.blockNumber, function (err, value) {
+                                        console.log("index mis à jour " + parsedBlock.blockInfo.blockNumber)
+                                    })
+                                }
+                            } else {
+                                let parsedBlock = JSON.parse(element)
+                                let previousHash = JSON.parse(result[index - 1]).blockInfo.hash
+                                let test = sha3.keccak256(parsedBlock.blocks + previousHash)
+                                if (test == parsedBlock.blockInfo.hash) {
+                                    blocks.put(parsedBlock.blockInfo.blockNumber, JSON.stringify(parsedBlock), function (err, value) {
+                                        console.log("block ajouté " + parsedBlock.blockInfo.blockNumber)
+                                    })
+                                }
+                                if (index == result.length - 1) {
+                                    console.log("Boucle terminée on execute cette fonction")
+                                    blocks.put("index", parsedBlock.blockInfo.blockNumber, function (err, value) {
+                                        console.log("index mis à jour " + parsedBlock.blockInfo.blockNumber)
+                                    })
+                                }
+                            }
+
+
+                        });
+                    })
                 }
+                // LOGIQUE AJOUT BLOCKS
 
 
 
