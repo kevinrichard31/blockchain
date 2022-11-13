@@ -524,6 +524,17 @@ wsServer.on('request', function (request) {
                         })
 
                         break;
+                    case "getPeerList":
+                        console.log("getPeerList");
+                        let prepareData = connectedPeers
+                        // On supprime la connection, à cause un crash à cause d'une référence circulaire.
+                        prepareData.forEach(element => {
+                            delete element['connection']
+                        });
+                        console.log(prepareData)
+                        connection.sendUTF(JSON.stringify(prepareData))
+                        break;
+
                     case "killServer":
                         console.log(process.pid)
                         connection.sendUTF(process.pid)
@@ -536,6 +547,7 @@ wsServer.on('request', function (request) {
                 // console.log(JSON.parse(result.signature))
 
             } catch (err) {
+                console.log(err)
                 connection.sendUTF('GIGANETWORK: connection ok but no case type found');
                 return null
             }
