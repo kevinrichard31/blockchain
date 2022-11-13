@@ -194,6 +194,27 @@ module.exports.sendBecomeStacker = sendBecomeStacker
 
 // 78.201.245.32
 
+let peerList = ["78.201.245.32:8080"]
+function getPeerList(){
+    let client = new WebSocketClient();
+    client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
+    client.on('connect', function (connection) {
+        // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+
+        let prepareData = {
+            type: "getPeerList"
+        }
+        connection.sendUTF(JSON.stringify(prepareData))
+        connection.on('message', function (message) {
+            if (message.type === 'utf8') {
+                // let result = JSON.parse(message.utf8Data)
+                console.log(message)
+                connection.close()
+            }
+        });
+    });
+}
+// getPeerList()
 function getIndex() {
     const level = require('level')
     const wallets = level('wallets')
@@ -227,7 +248,7 @@ function getIndex() {
         });
     });
 }
-// getIndex()
+
 module.exports.getIndex = getIndex
 
 
