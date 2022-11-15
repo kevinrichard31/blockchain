@@ -6,7 +6,16 @@
 
 // let tools = require('./client.js')
 let process = require('process');
-let ip = require('ip');
+var http = require('http');
+let ip
+http.get({'host': 'checkip.amazonaws.com', 'port': 80, 'path': '/'}, function(resp) {
+  resp.on('data', function(ipo) {
+    
+    ip = ipo.toString().replace(/(\r\n|\n|\r)/gm, "");
+  });
+});
+
+
 const level = require('level')
 const wallets = level('wallets')
 const blocks = level('blocks')
@@ -121,8 +130,8 @@ async function AmILeader() {
     //  On vérifie si je suis validateur
 
     console.log('stackers********')
-    let obj = connectedPeers.find(o => o.ip == '127.0.0.1')
-
+    let obj = connectedPeers.find(o => o.ip == ip)
+    // console.log(connectedPeers)
 
     try {
         connectedPeers.forEach(element => {
@@ -149,7 +158,7 @@ async function AmILeader() {
                 }
             }
         );
-        if (biggestStacker.ip == "127.0.0.1") {
+        if (biggestStacker.ip == ip) {
             console.log("YOU ARE LEADER")
             leader = true
         } else {
@@ -465,7 +474,12 @@ wsServer.on('request', function (request) {
 
 
     if (connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0) { // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
-        connectedPeers.push({ ip: request.remoteAddress.split(":").pop(), stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+        if(request.remoteAddress.split(":").pop() == "127.0.0.1"){
+            connectedPeers.push({ ip: ip, stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+
+        } else {
+            connectedPeers.push({ ip: request.remoteAddress.split(":").pop(), stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+        }
     }
     // console.log(connectedPeers)
     // Permet d'envoyer des messages à tout le réseau
@@ -505,7 +519,14 @@ wsServer.on('request', function (request) {
                         break;
                     case "becomeStacker":
                         console.log("becomeStacker");
-                        becomeStacker(connection.remoteAddress.split(":").pop(), result)
+                        console.log(connection.remoteAddress.split(":").pop() == "127.0.0.1")
+                        if(connection.remoteAddress.split(":").pop() == "127.0.0.1"){
+                            becomeStacker(ip, result) // add self ip
+                        } else {
+                            becomeStacker(connection.remoteAddress.split(":").pop(), result)
+                        }
+                        
+                        
                         break;
                     case "getIndex":
                         console.log("becomeStacker");
@@ -527,11 +548,13 @@ wsServer.on('request', function (request) {
                     case "getPeerList":
                         console.log("getPeerList");
                         let prepareData = connectedPeers
+                        console.log('test')
                         // On supprime la connection, à cause un crash à cause d'une référence circulaire.
                         prepareData.forEach(element => {
                             delete element['connection']
                         });
-                        console.log(prepareData)
+                        console.log('prepareData')
+
                         connection.sendUTF(JSON.stringify(prepareData))
                         break;
 
@@ -564,7 +587,7 @@ wsServer.on('request', function (request) {
             //     console.log(connectedPeers)
             // }, 1000);
             // supprimer la connection sauf si l'ip est local
-            if (o.ip == "127.0.0.1") {
+            if (o.ip == ip) {
                 return o
             } else {
                 return o.ip !== connection.remoteAddress.split(":").pop()
@@ -647,12 +670,12 @@ wsServer.on('request', function (request) {
                                         console.log(element.ip)
                                         // console.log(result)
 
-                                        if (element.stacking == true && element.ip != ip.address()) {
+                                        if (element.stacking == true && element.ip != ip) {
                                             element.connection.sendUTF(result)
                                         }
                                     });
                                     connection.sendUTF('Gas fees will be : ' + (amountToSend * (gazfee / 100)))
-                                    connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable, Transaction added to the validation pool.')
+                                    connection.sendUTF('GIGANETWORK: Wallet found and you have sufficient $GIGA spendable, Transaction added to the validation pool. Verify on blockexplorer that transaction has been validated')
                                 } else {
                                     connection.sendUTF('GIGANETWORK: transaction already exist')
                                 }
