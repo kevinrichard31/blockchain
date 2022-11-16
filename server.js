@@ -98,6 +98,7 @@ function originIsAllowed(origin) {
 }
 setInterval(() => {
     AmILeader()
+    // console.log(connectedPeers)
     switch (leader) {
         case true:
             console.log("[[[You are Leader !]]] You are connected as stacker ! ****Congratulations*****")
@@ -108,7 +109,7 @@ setInterval(() => {
         default:
             break;
     }
-}, 2000);
+}, 5000);
 
 
 // ENVOYER SA TRANSACTION A UN AUTRE NOEUD
@@ -135,7 +136,7 @@ async function AmILeader() {
 
     try {
         connectedPeers.forEach(element => {
-            console.log(element.wallet + " " + element.ip + " " + element.stacking)
+            // console.log(element.wallet + " " + element.ip + " " + element.stacking)
         });
         let walletValueChecker = []
         for (const peer of connectedPeers) {
@@ -453,9 +454,6 @@ function verifySignature(result) {
 let allpeers = []
 wsServer.on('request', function (request) {
     let remoteIP = request.remoteAddress.split(":").pop()
-    console.log('remoteIP')
-    console.log(remoteIP)
-    let obj = connectedPeers.find(o => o.ip == request.remoteAddress.split(":").pop())
 
     // Accept the connection of the nodes
     // console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
@@ -468,18 +466,23 @@ wsServer.on('request', function (request) {
     //         return;
     //     }
     // }
-    console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
 
     let connection = request.accept('echo-protocol', request.origin);
+    // console.log(connection)
+    
+    if(request.remoteAddress.split(":").pop().includes('127.0') || request.remoteAddress.split(":").pop().includes('192.168')){
+        remoteIP = ip
+    }
+    if (connectedPeers.filter(peer => peer.ip == remoteIP).length < 1) { // Limit 3 > Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
 
-
-    if (connectedPeers.filter(peer => peer.ip === remoteIP).length < 3) { // Limit 3 > Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
-        if (remoteIP == "127.0.0.1") {
-            connectedPeers.push({ ip: ip, stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
-
+        if (remoteIP == ip) {
+            connectedPeers.push({ ip: ip, stacking: false, connection: connection, id:gID() }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
         } else {
-            connectedPeers.push({ ip: remoteIP, stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+            connectedPeers.push({ ip: remoteIP, stacking: false, connection: connection, id:gID() }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
         }
+    } else {
+        console.log('******** TOO MANY SAME IP ********')
+        // request.reject()
     }
     // console.log(connectedPeers)
     // Permet d'envoyer des messages à tout le réseau
@@ -761,3 +764,7 @@ wsServer.on('request', function (request) {
     }
 
 });
+
+function gID(){
+    return Math.random().toString(16).slice(2)
+}
