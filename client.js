@@ -207,14 +207,14 @@ function getPeerList(){
         connection.sendUTF(JSON.stringify(prepareData))
         connection.on('message', function (message) {
             if (message.type === 'utf8') {
-                // let result = JSON.parse(message.utf8Data)
-                console.log(message)
+                let result = JSON.parse(message.utf8Data)
+                console.log(result)
                 connection.close()
             }
         });
     });
 }
-// getPeerList()
+getPeerList()
 function getIndex() {
     const level = require('level')
     const wallets = level('wallets')
