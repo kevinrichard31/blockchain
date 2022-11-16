@@ -478,7 +478,7 @@ wsServer.on('request', function (request) {
             connectedPeers.push({ ip: ip, stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
 
         } else {
-            connectedPeers.push({ ip: request.remoteAddress.split(":").pop(), stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+            connectedPeers.push({ ip: remoteIP, stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
         }
     }
     // console.log(connectedPeers)
