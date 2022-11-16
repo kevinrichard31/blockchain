@@ -451,7 +451,7 @@ function verifySignature(result) {
 
 
 
-let allpeers = []
+let connectedList = []
 wsServer.on('request', function (request) {
     let remoteIP = request.remoteAddress.split(":").pop()
 
@@ -469,20 +469,29 @@ wsServer.on('request', function (request) {
 
     let connection = request.accept('echo-protocol', request.origin);
     // console.log(connection)
-    
-    if(request.remoteAddress.split(":").pop().includes('127.0') || request.remoteAddress.split(":").pop().includes('192.168')){
+    connectedList.push({ ip: remoteIP, connection: connection, id: gID() })
+    if (connectedList.filter(peer => peer.ip == remoteIP).length > 3) {
+        connectedList.filter(peer => peer.ip == remoteIP).forEach(element => {
+            element.connection.sendUTF(JSON.stringify('You have been kicked, server are limited to 3 connections per ip'));
+            connectedList = connectedList.filter(peer => peer.ip != remoteIP)
+            element.connection.close()
+        });
+    }
+    if (request.remoteAddress.split(":").pop().includes('127.0') || request.remoteAddress.split(":").pop().includes('192.168')) {
         remoteIP = ip
     }
     if (connectedPeers.filter(peer => peer.ip == remoteIP).length < 1) { // Limit 3 > Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
 
         if (remoteIP == ip) {
-            connectedPeers.push({ ip: ip, stacking: false, connection: connection, id:gID() }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+            connectedPeers.push({ ip: ip, stacking: false, connection: connection, id: gID() }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
         } else {
-            connectedPeers.push({ ip: remoteIP, stacking: false, connection: connection, id:gID() }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
+            connectedPeers.push({ ip: remoteIP, stacking: false, connection: connection, id: gID() }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
         }
     } else {
         console.log('******** TOO MANY SAME IP ********')
-        // request.reject()
+        if (remoteIP != ip) {
+            connection.close()
+        }
     }
     // console.log(connectedPeers)
     // Permet d'envoyer des messages à tout le réseau
@@ -765,6 +774,6 @@ wsServer.on('request', function (request) {
 
 });
 
-function gID(){
+function gID() {
     return Math.random().toString(16).slice(2)
 }
