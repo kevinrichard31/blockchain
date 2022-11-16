@@ -8,11 +8,11 @@
 let process = require('process');
 var http = require('http');
 let ip
-http.get({'host': 'checkip.amazonaws.com', 'port': 80, 'path': '/'}, function(resp) {
-  resp.on('data', function(ipo) {
-    
-    ip = ipo.toString().replace(/(\r\n|\n|\r)/gm, "");
-  });
+http.get({ 'host': 'checkip.amazonaws.com', 'port': 80, 'path': '/' }, function (resp) {
+    resp.on('data', function (ipo) {
+
+        ip = ipo.toString().replace(/(\r\n|\n|\r)/gm, "");
+    });
 });
 
 
@@ -459,22 +459,22 @@ wsServer.on('request', function (request) {
 
     // Accept the connection of the nodes
     // console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
-    if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true || obj != undefined) {
+    // if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true || obj != undefined) {
 
-        // Make sure we only accept requests from an allowed origin
-        if (remoteIP != "127.0.0.1") {
-            request.reject();
-            console.log((new Date()) + ' Connection from origin ' + request.remoteAddress + ' rejected.');
-            return;
-        }
-    }
+    //     // Make sure we only accept requests from an allowed origin
+    //     if (remoteIP != "127.0.0.1") {
+    //         request.reject();
+    //         console.log((new Date()) + ' Connection from origin ' + request.remoteAddress + ' rejected.');
+    //         return;
+    //     }
+    // }
     console.log(connectedPeers.includes(request.remoteAddress.split(":").pop()))
 
     let connection = request.accept('echo-protocol', request.origin);
 
 
-    if (connectedPeers.findIndex((peer) => peer.ip === remoteIP) < 0) { // Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
-        if(request.remoteAddress.split(":").pop() == "127.0.0.1"){
+    if (connectedPeers.filter(peer => peer.ip === remoteIP).length < 3) { // Limit 3 > Ne pas ajouter plusieurs fois la même IP dans les peers connected, garde fou
+        if (remoteIP == "127.0.0.1") {
             connectedPeers.push({ ip: ip, stacking: false, connection: connection }) // Si l'IP existe déjà alors on ajoute pas, sinon on ajoute
 
         } else {
@@ -520,13 +520,13 @@ wsServer.on('request', function (request) {
                     case "becomeStacker":
                         console.log("becomeStacker");
                         console.log(connection.remoteAddress.split(":").pop() == "127.0.0.1")
-                        if(connection.remoteAddress.split(":").pop() == "127.0.0.1"){
+                        if (connection.remoteAddress.split(":").pop() == "127.0.0.1") {
                             becomeStacker(ip, result) // add self ip
                         } else {
                             becomeStacker(connection.remoteAddress.split(":").pop(), result)
                         }
-                        
-                        
+
+
                         break;
                     case "getIndex":
                         console.log("becomeStacker");
@@ -587,6 +587,7 @@ wsServer.on('request', function (request) {
             //     console.log(connectedPeers)
             // }, 1000);
             // supprimer la connection sauf si l'ip est local
+            console.log(o)
             if (o.ip == ip) {
                 return o
             } else {
@@ -594,11 +595,8 @@ wsServer.on('request', function (request) {
             }
 
         });
-
         console.log((new Date()) + ' Peer ' + connection.remoteAddress.split(":").pop() + ' disconnected.');
     });
-
-
 
     function becomeStacker(ip, result) {
         console.log("*****BECOMESTACKER******")
