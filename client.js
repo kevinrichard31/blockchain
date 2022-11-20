@@ -185,7 +185,7 @@ function sendBecomeStacker() {
 
     });
 
-    // connection.close()
+    connection.close()
     // walletest à supprimer delete deleted
 
     // fin à a supprimer
@@ -209,7 +209,7 @@ function getPeerList(){
             if (message.type === 'utf8') {
                 let result = JSON.parse(message.utf8Data)
                 console.log(result)
-                connection.close()
+                // connection.close()
             }
         });
     });
