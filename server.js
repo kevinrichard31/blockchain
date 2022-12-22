@@ -38,6 +38,7 @@ let ec = new elliptic.ec('secp256k1');
 let connectedPeers = []
 let pool = []
 let stackers = []
+let biggestHolder
 
 // CLIENT PART TO CONNECT TO ANOTHER NODES.
 // var WebSocketClient = require('websocket').client;
@@ -149,7 +150,7 @@ async function AmILeader() {
                 }
             )
         }
-        let biggestStacker = walletValueChecker.reduce(
+        biggestHolder = walletValueChecker.reduce(
             (prev, current) => {
                 // Changed the > to a <
                 if (current.value == undefined || current.stacking != true) {
@@ -159,7 +160,9 @@ async function AmILeader() {
                 }
             }
         );
-        if (biggestStacker.ip == ip) {
+        console.log('****** BIGGEST HOLDER ******')
+        console.log(biggestHolder)
+        if (biggestHolder.ip == ip) {
             console.log("YOU ARE LEADER")
             leader = true
         } else {
@@ -560,7 +563,6 @@ wsServer.on('request', function (request) {
                     case "getPeerList":
                         console.log("getPeerList");
                         let prepareData = connectedPeers
-                        console.log('test')
                         // On supprime la connection, à cause un crash à cause d'une référence circulaire.
                         prepareData.forEach(element => {
                             delete element['connection']
@@ -569,7 +571,12 @@ wsServer.on('request', function (request) {
 
                         connection.sendUTF(JSON.stringify(prepareData))
                         break;
-
+                    case "getBiggestHolder":
+                        console.log("GET BIGGEST HOLDER");
+                        // console.log(biggestHolder)
+                        // On supprime la connection, à cause un crash à cause d'une référence circulaire.
+                        connection.sendUTF(JSON.stringify(biggestHolder))
+                        break;
                     case "killServer":
                         console.log(process.pid)
                         connection.sendUTF(process.pid)
