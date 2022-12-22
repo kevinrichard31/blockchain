@@ -75,6 +75,7 @@ module.exports.generateKeyPair = function () {
 var WebSocketClient = require('websocket').client;
 const { connection } = require('websocket');
 const { BlockList } = require('net');
+const { resolve } = require('path');
 
 // client.on('connectFailed', function (error) {
 //     console.log('Connect Error: ' + error.toString());
@@ -194,34 +195,73 @@ module.exports.sendBecomeStacker = sendBecomeStacker
 
 // 78.201.245.32
 
-let peerList = ["78.201.245.32:8080"]
-function getPeerList(){
-    let client = new WebSocketClient();
-    client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
-    client.on('connect', function (connection) {
-        // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+let peerList = ["92.90.231.156:8080"]
+function getPeerList() {
+    return new Promise(function (resolve, reject) {
+        let client = new WebSocketClient();
 
-        let prepareData = {
-            type: "getPeerList"
-        }
-        connection.sendUTF(JSON.stringify(prepareData))
-        connection.on('message', function (message) {
-            if (message.type === 'utf8') {
-                let result = JSON.parse(message.utf8Data)
-                console.log(result)
-                // connection.close()
+        client.connect('ws://92.90.231.156:8080/', 'echo-protocol');
+        client.on('connect', function (connection) {
+            // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+
+            let prepareData = {
+                type: "getPeerList"
             }
+            connection.sendUTF(JSON.stringify(prepareData))
+            connection.on('message', function (message) {
+                if (message.type === 'utf8') {
+
+                    // console.log(result)
+                    connection.close()
+                    let result = JSON.parse(message.utf8Data)
+                    resolve(result)
+
+                }
+            });
         });
     });
 }
-getPeerList()
+// getPeerList()
+getPeerList().then(function(server) {
+    // server is ready here
+    // console.log(server)
+    // FILTRER LES PEERS QUI N'ONT PAS LA MEME IP et qui ont le statut TRUE sur stacking.
+    let peers = server.filter(peer => peer.stacking == true)
+    // console.log(peers)
+    peers.forEach(peer => {
+        console.log(peer)
+        let client = new WebSocketClient();
+        client.connect('ws://92.90.231.156:8080/', 'echo-protocol');
+        client.on('connect', function (connection) {
+            // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
+            let prepareData = {
+                type: "getBiggestHolder"
+            }
+            connection.sendUTF(JSON.stringify(prepareData))
+            connection.on('message', function (message) {
+                if (message.type === 'utf8') {
+
+                    // console.log(result)
+                    // connection.close()
+                    let result = JSON.parse(message.utf8Data)
+                    console.log(result)
+
+                }
+            });
+        });
+    });
+}).catch(function(err) {
+    // error here
+    // console.log(err)
+});
+// console.log(getPeerList())
 function getIndex() {
     const level = require('level')
     const wallets = level('wallets')
     const blocks = level('blocks')
     let index
     let client = new WebSocketClient();
-    client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
+    client.connect('ws://92.90.231.156:8080/', 'echo-protocol');
     client.on('connect', function (connection) {
         // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
 
@@ -259,7 +299,7 @@ function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
     console.log(myIndex)
     console.log(indexPeer)
     let client = new WebSocketClient();
-    client.connect('ws://78.201.245.32:8080/', 'echo-protocol');
+    client.connect('ws://92.90.231.156:8080/', 'echo-protocol');
     client.on('connect', function (connection) {
         // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
         let prepareData = {
