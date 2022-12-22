@@ -186,7 +186,7 @@ function sendBecomeStacker() {
 
     });
 
-    connection.close()
+    // connection.close()
     // walletest à supprimer delete deleted
 
     // fin à a supprimer
