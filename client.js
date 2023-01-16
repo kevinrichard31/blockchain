@@ -76,6 +76,7 @@ var WebSocketClient = require('websocket').client;
 const { connection } = require('websocket');
 const { BlockList } = require('net');
 const { resolve } = require('path');
+const { LogSeverity } = require('couchbase');
 
 // client.on('connectFailed', function (error) {
 //     console.log('Connect Error: ' + error.toString());
@@ -197,6 +198,7 @@ module.exports.sendBecomeStacker = sendBecomeStacker
 
 let peerList = ["92.90.231.156:8080"]
 function getPeerList() {
+    console.log('Récupération des peers')
     return new Promise(function (resolve, reject) {
         let client = new WebSocketClient();
 
@@ -222,16 +224,20 @@ function getPeerList() {
     });
 }
 // getPeerList()
-getPeerList().then(function(server) {
+
+
+
+getPeerList().then(function (server) {
     // server is ready here
     // console.log(server)
     // FILTRER LES PEERS QUI N'ONT PAS LA MEME IP et qui ont le statut TRUE sur stacking.
     let peers = server.filter(peer => peer.stacking == true)
     // console.log(peers)
+    let topPeers = []
     peers.forEach(peer => {
         console.log(peer)
         let client = new WebSocketClient();
-        client.connect('ws://92.90.231.156:8080/', 'echo-protocol');
+        client.connect('ws://' + peer.ip + ':8080/', 'echo-protocol');
         client.on('connect', function (connection) {
             // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
             let prepareData = {
@@ -243,25 +249,59 @@ getPeerList().then(function(server) {
 
                     // console.log(result)
                     // connection.close()
+                    console.log('GET PEER LIST')
                     let result = JSON.parse(message.utf8Data)
                     console.log(result)
+                    connection.close()
 
+
+                    topPeers.push(result)
                 }
             });
         });
     });
-}).catch(function(err) {
+
+
+    setTimeout(() => {
+        var combinedItems = topPeers.reduce(function (arr, item) {
+            var found = false;
+
+            for (var i = 0; i < arr.length; i++) {
+                if (arr[i].ip === item.ip) {
+                    found = true;
+                    arr[i].count++;
+                }
+            }
+
+            if (!found) {
+                item.count = 1;
+                arr.push(item);
+            }
+
+            return arr;
+        }, [])
+
+        // console.log(combinedItems)
+
+        let biggestValuePeer = combinedItems.reduce((accum, actualValue) => accum.count > actualValue.count ? accum : actualValue);
+        console.log('BIGGEST PEER')
+        console.log(biggestValuePeer)
+        console.log('on a récupéré le meilleur peer, on utilise celui là pour récupérer l index')
+        getIndex(biggestValuePeer)
+    }, 5000);
+
+}).catch(function (err) {
     // error here
     // console.log(err)
 });
 // console.log(getPeerList())
-function getIndex() {
+async function getIndex(peer) {
     const level = require('level')
     const wallets = level('wallets')
     const blocks = level('blocks')
     let index
     let client = new WebSocketClient();
-    client.connect('ws://92.90.231.156:8080/', 'echo-protocol');
+    client.connect('ws://' + peer.ip + ':8080/', 'echo-protocol');
     client.on('connect', function (connection) {
         // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
 
@@ -274,15 +314,83 @@ function getIndex() {
                 let indexFromPeer = JSON.parse(message.utf8Data)
                 console.log("INDEX DU PEER")
                 console.log(indexFromPeer)
+                async function getindex() {
+                    try {
+                        let myIndex = await blocks.get('index')
+                        nextstepgetblocks(myIndex)
 
-                blocks.get('index', function (err, value) {
-                    console.log("MON INDEX")
-                    console.log(value)
-                    if (value == undefined || indexFromPeer > value) {
-                        getBlocks(value, indexFromPeer, level, wallets, blocks)
-                        connection.close()
+                    } catch (error) {
+
+                        console.log('index')
+                        console.log(index)
+                        let myIndex = undefined // mettre sur undefined sinon ne peut pas récupérer le block 0
+                        nextstepgetblocks(myIndex)
                     }
-                })
+
+                    function nextstepgetblocks(myIndex) {
+                        // getBlocks(myIndex, indexFromPeer, level, wallets, blocks)
+                        if(myIndex == indexFromPeer){
+                            console.log('Your block index : ' + myIndex)
+                            console.log('Peer Index : ' + indexFromPeer)
+                            console.log('You are already up to date.')
+                        }
+                        if (myIndex == undefined || indexFromPeer > myIndex) {
+                            console.log('TEST*********')
+                            if ((indexFromPeer - myIndex) > 3 || isNaN(indexFromPeer - myIndex)) {
+
+
+                                let max = indexFromPeer
+                                let countBetween = indexFromPeer - myIndex
+                                let countBetweenInterval = countBetween / 1
+                                let steps = 30
+
+                                let testInterval = Math.round(indexFromPeer/steps)
+                                console.log('testinterval')
+                                console.log(testInterval)
+                                if(isNaN(myIndex)){
+                                    indexFromPeer = Number(steps)
+                                } else {
+                                    indexfrompeer = Number(myIndex) + Number(steps)
+                                }
+                                console.log(indexFromPeer)
+                                console.log('OK PLUS DE TROIS TRANSACTIONS')
+
+                                connection.close()
+                                let interval = setInterval(() => {
+                                    if(myIndex > indexFromPeer){
+                                        clearInterval(interval)
+                                    } else {
+                                        getBlocks(myIndex, indexFromPeer, level, wallets, blocks)
+                                    }
+                                    indexFromPeer = Number(indexFromPeer) + Number(steps)
+                                    if(isNaN(myIndex)){
+                                        myIndex = 0 + Number(steps)
+                                    } else {
+                                        myIndex = Number(myIndex) + Number(steps)
+                                    }
+
+                                    if(indexFromPeer > max){
+                                        indexFromPeer = max
+                                    }
+                                    if (indexFromPeer == max +1) {
+                                        console.log('FINI ON CLEAR INTERVAL')
+                                        clearInterval(interval)
+                                    }
+                                }, 3000);
+
+
+                            } else {
+                                console.log('getBlocks')
+                                getBlocks(myIndex, indexFromPeer, level, wallets, blocks)
+                                connection.close()
+                            }
+                        }
+                    }
+
+                }
+
+                getindex()
+
 
             }
         });
@@ -294,9 +402,9 @@ module.exports.getIndex = getIndex
 
 // Passer en paramètre la valeur de son index pour récupérer des blocks distants manquants
 function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
-
+    // myIndex = Number(myIndex)
     console.log("FONCTION GET BLOCKS")
-    console.log(myIndex)
+    console.log(Number(myIndex))
     console.log(indexPeer)
     let client = new WebSocketClient();
     client.connect('ws://92.90.231.156:8080/', 'echo-protocol');
@@ -304,20 +412,22 @@ function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
         // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
         let prepareData = {
             type: "getBlocks",
-            myIndex: myIndex,
+            myIndex: Number(myIndex),
             indexNeeded: indexPeer
         }
         let newArr = []
 
+        // connection.sendUTF('BONJOUR FDPUTE' + myIndex)
         if (myIndex == undefined) {
             for (let index = 0; index <= indexPeer; index++) {
                 newArr.push(index)
-                console.log(newArr)
+                // console.log(newArr)
+
                 prepareData.getBlocks = newArr
 
             }
             connection.sendUTF(JSON.stringify(prepareData))
-        } else if (myIndex >= 0) {
+        } else if(myIndex >= 0){
             // for (let index = myIndex + 1; index <= indexPeer; index++) {
             //     newArr.push(index)
             //     prepareData.getBlocks = newArr
@@ -329,24 +439,30 @@ function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
                 newArr.push(JSON.parse(index) + 1)
                 prepareData.getBlocks = newArr
 
-                console.log(newArr)
+                // console.log(newArr)
             }
 
+            console.log('DATA PREPARER POUR GETBLOCKS')
             console.log(prepareData)
             connection.sendUTF(JSON.stringify(prepareData))
+
         }
 
-        connection.on('message', function (message) {
 
+        connection.on('message', function (message) {
+            connection.close()
             if (message.type === 'utf8') {
                 let result = JSON.parse(message.utf8Data)
-                // console.log(JSON.parse(result))
-
-
-
+                console.log('REPONSE SERVEUR********************************')
+                // console.log(result)
+                console.log(result)
+                console.log('FIN TEST****************')
+                console.log(JSON.parse(result[0]))
 
                 // LOGIQUE 0 BLOCKS
                 if (JSON.parse(result[0]).blockInfo.blockNumber == 0) {
+                    console.log('0 BLOCK TROUVE, on ajoute le block 0')
+                    console.log(JSON.parse(result[0]))
                     // On vérifie l'intégrité du bloc avec l'ancien hash + formule hashage block
                     for (let index = 0; index < result.length; index++) {
                         setTimeout(() => {
@@ -382,13 +498,21 @@ function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
                                     }, 1000);
                                 }
                             }
-                        }, index * 100);
+                        }, index * 50);
 
                     }
                 } else {
                     console.log("BLOCKS ARE ALREADY ADDED, ADD NEW PROCESS")
+                    console.log(JSON.parse(result[0]).blockInfo.blockNumber - 1)
+                    // console.log(JSON.parse(result[0]).blockInfo.blockNumber - 1)
+                    // blocks.get('1'), function(err, result){
+                    //     console.log(result)
+                    //     if(err){
+                    //         console.log(err)
+                    //     }
+                    // }
                     blocks.get(JSON.parse(result[0]).blockInfo.blockNumber - 1, function (err, resultLastBlock) {
-                        // console.log(JSON.parse(resultLastBlock))
+                        console.log(resultLastBlock)
                         let lastBlock = JSON.parse(resultLastBlock)
                         result.forEach((element, index) => {
                             if (index == 0) {
@@ -399,6 +523,8 @@ function getBlocks(myIndex, indexPeer, level, wallets, blocks) {
                                 if (test == parsedBlock.blockInfo.hash) {
                                     blocks.put(parsedBlock.blockInfo.blockNumber, JSON.stringify(parsedBlock), function (err, value) {
                                         console.log("block ajouté " + parsedBlock.blockInfo.blockNumber)
+                                        console.log("**********HASH DU BLOCK**********")
+                                        console.log(parsedBlock.blockInfo.hash)
                                     })
                                 }
                                 if (index == result.length - 1) {
