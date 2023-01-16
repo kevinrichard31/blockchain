@@ -427,7 +427,7 @@ setInterval(() => {
     if (leader == true) {
         validateBlock()
     }
-}, 1000);
+}, 5000);
 
 
 function verifySignature(result) {
@@ -457,7 +457,7 @@ function verifySignature(result) {
 let connectedList = []
 wsServer.on('request', function (request) {
     let remoteIP = request.remoteAddress.split(":").pop()
-
+    console.log(remoteIP)
     // Accept the connection of the nodes
     // console.log(connectedPeers.indexOf(request.remoteAddress) > -1) // activer pour la prod
     // if (!originIsAllowed(request.origin) || connectedPeers.includes(request.remoteAddress.split(":").pop()) == true || obj != undefined) {
@@ -473,7 +473,7 @@ wsServer.on('request', function (request) {
     let connection = request.accept('echo-protocol', request.origin);
     // console.log(connection)
     connectedList.push({ ip: remoteIP, connection: connection, id: gID() })
-    if (connectedList.filter(peer => peer.ip == remoteIP).length > 3) {
+    if (connectedList.filter(peer => peer.ip == remoteIP).length > 100) {
         connectedList.filter(peer => peer.ip == remoteIP).forEach(element => {
             element.connection.sendUTF(JSON.stringify('You have been kicked, server are limited to 3 connections per ip'));
             connectedList = connectedList.filter(peer => peer.ip != remoteIP)
@@ -507,6 +507,8 @@ wsServer.on('request', function (request) {
 
     // Receiving messages from nodes (peers)
     connection.on('message', function (message) {
+        console.log('AVREMESS')
+        console.log(message)
         if (message.type === 'utf8') {
             try {
                 // console.log(message)
@@ -540,7 +542,7 @@ wsServer.on('request', function (request) {
                         } else {
                             becomeStacker(connection.remoteAddress.split(":").pop(), result)
                         }
-
+ 
 
                         break;
                     case "getIndex":
@@ -554,10 +556,21 @@ wsServer.on('request', function (request) {
                     case "getBlocks":
                         console.log("getBlocks");
                         console.log(result.getBlocks)
-                        blocks.getMany(result.getBlocks, function (err, value) {
-                            console.log(value)
-                            connection.sendUTF(JSON.stringify(value))
-                        })
+                        if(result.getBlocks.length > 100){
+                            connection.sendUTF(JSON.stringify('Too many blocks asked'))
+                        } else {
+                            blocks.getMany(result.getBlocks, function (err, value) {
+                                console.log('ON RETOURNE')
+                                console.log(value)
+                                connection.sendUTF(JSON.stringify(value))
+                            })
+                            // blocks.get(0, function (err, value) {
+                            //     console.log('ON RETOURNE')
+                            //     console.log(value)
+                            //     connection.sendUTF(JSON.stringify(value))
+                            // })
+                        }
+
 
                         break;
                     case "getPeerList":
