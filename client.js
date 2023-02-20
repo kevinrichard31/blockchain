@@ -661,6 +661,18 @@ module.exports.buildGenesis = function (value) {
                 message: message,
                 signature: signMessage(message)
             }
+
+            blockInfo =
+            {
+                blockNumber: 0,
+                creationDate: new Date(),
+                hash: sha3.keccak256(blockPush.blocks)
+            }
+
+            let block = []
+            block.transaction = prepareData
+            block.info = blockInfo
             console.log("🌱 ~ file: client.js:661 ~ prepareData", prepareData)
 
 };
+

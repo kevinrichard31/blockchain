@@ -833,7 +833,7 @@ async function syncWallets() {
                 
             } else {
                 indexGet = JSON.parse(indexGet)
-                for (let index = 0; index <= indexGet; index++) { // BOUCLE POUR CHAQUE BLOCK
+                for (let index = 1; index <= indexGet; index++) { // BOUCLE POUR CHAQUE BLOCK
                     console.log("🌱 ~ file: server.js:826 ~ index", index)
                     
                     setTimeout(() => {
@@ -916,3 +916,5 @@ async function syncWallets() {
     }
 }
 syncWallets()
+
+
