@@ -55,7 +55,9 @@ let biggestHolder
 //         // connection.sendUTF(JSON.stringify({type:'supertest'}))
 // });
 
-// wallets.put('oUn5x1mrX9obBdj8oXspS1TAeKLMY5YMFPUtr8oPrXTk', JSON.stringify({
+
+// w6pmv3zMkXPGdwPM1ANaEPDoVVUEomsSSrECDPitPf4M
+// wallets.put('w6pmv3zMkXPGdwPM1ANaEPDoVVUEomsSSrECDPitPf4M', JSON.stringify({
 //     value: 1000,
 //     creationDate: Date.now(),
 //     lastInfoModification: Date.now(),
@@ -66,6 +68,28 @@ let biggestHolder
 // }), function (err, value) {
 //     if (err) return console.log('Ooops!', err) // some kind of I/O error
 // })
+
+// setTimeout(() => {
+//     wallets.get('w6pmv3zMkXPGdwPM1ANaEPDoVVUEomsSSrECDPitPf4M', function (err, value) {
+//         if (err) return console.log('Ooops!', err) // some kind of I/O error
+
+//         let x = JSON.parse(value)
+//         console.log("🌱 ~ file: server.js:77 ~ x", x)
+        
+        
+//     });
+// }, 5000);
+
+// setTimeout(() => {
+//     blocks.get(0, function (err, value) {
+//         if (err) return console.log('Ooops!', err) // some kind of I/O error
+
+//         let x = JSON.parse(value)
+//         console.log("🌱 ~ file: server.js:77 ~ x", x)
+        
+        
+//     });
+// }, 5000);
 
 
 
@@ -131,7 +155,7 @@ setInterval(() => {
 async function AmILeader() {
     //  On vérifie si je suis validateur
 
-    console.log('stackers********')
+    
     let obj = connectedPeers.find(o => o.ip == ip)
     // console.log(connectedPeers)
 
@@ -160,11 +184,11 @@ async function AmILeader() {
                 }
             }
         );
-        console.log('****** BIGGEST HOLDER ******')
-        console.log(biggestHolder)
+        console.log("🌱 ~ file: server.js:177 ~ AmILeader ~ biggestHolder", biggestHolder)
+
         if (biggestHolder.ip == ip) {
-            console.log("YOU ARE LEADER")
             leader = true
+            console.log("🌱 ~ file: server.js:182 ~ AmILeader ~ leader", leader)
         } else {
             leader = false
         }
@@ -542,7 +566,7 @@ wsServer.on('request', function (request) {
                         } else {
                             becomeStacker(connection.remoteAddress.split(":").pop(), result)
                         }
- 
+
 
                         break;
                     case "getIndex":
@@ -556,7 +580,7 @@ wsServer.on('request', function (request) {
                     case "getBlocks":
                         console.log("getBlocks");
                         console.log(result.getBlocks)
-                        if(result.getBlocks.length > 100){
+                        if (result.getBlocks.length > 100) {
                             connection.sendUTF(JSON.stringify('Too many blocks asked'))
                         } else {
                             blocks.getMany(result.getBlocks, function (err, value) {
@@ -788,6 +812,7 @@ wsServer.on('request', function (request) {
         }
     }
 
+
     function insertDecimal(num) {
         return (num / 100).toFixed(8);
     }
@@ -797,3 +822,97 @@ wsServer.on('request', function (request) {
 function gID() {
     return Math.random().toString(16).slice(2)
 }
+
+// synchronise les wallets par rapport aux blocs enregistrés
+async function syncWallets() {
+    console.log("🌱 ~ file: server.js:818 ~ syncWallets ~ syncWallets", syncWallets)
+    try {
+        blocks.get('index', function (err, indexGet) {
+            if (indexGet == undefined) {
+                console.log("🌱 ~ file: server.js:820 ~ undefined", undefined)
+                
+            } else {
+                indexGet = JSON.parse(indexGet)
+                for (let index = 0; index <= indexGet; index++) { // BOUCLE POUR CHAQUE BLOCK
+                    console.log("🌱 ~ file: server.js:826 ~ index", index)
+                    
+                    setTimeout(() => {
+                        
+                        blocks.get(index, function (err, blockdata) {
+                            if (blockdata == undefined) {
+        
+                            } else {
+                                let block = JSON.parse(blockdata)
+                                console.log("🌱 ~ file: server.js:846 ~ block", block)
+
+                                for (let indexTx = 0; indexTx < block.blocks.length; indexTx++) {
+                                        setTimeout(() => {
+                                            let message = JSON.parse(block.blocks[indexTx].message)
+                                            let walletIdSender = verifySignature(block.blocks[indexTx])
+                                            let walletIdReceiver = message.toPubK
+            
+                                    
+                                            wallets.get(walletIdSender, function (err, value) {
+                                                if (value == undefined) {
+                                                    wallets.put(walletIdSender, JSON.stringify({
+                                                        value: 0 - message.amountToSend,
+                                                        lastTransaction: {
+                                                            block: block.blockInfo.blockNumber,
+                                                            hash: block.blockInfo.hash
+                                                        }
+                                                    }), function (err, value) {
+                                                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                                                    })
+                                                } else {
+                                                    let walletSender = JSON.parse(value)
+                                                    wallets.put(walletIdSender, JSON.stringify({
+                                                        value: walletSender.value - message.amountToSend,
+                                                        lastTransaction: {
+                                                            block: block.blockInfo.blockNumber,
+                                                            hash: block.blockInfo.hash
+                                                        }
+                                                    }), function (err, value) {
+                                                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                                                    })
+                                                }
+                                            });
+                                    
+                                            wallets.get(walletIdReceiver, function (err, value) {
+                                                if (value == undefined) {
+                                                    wallets.put(walletIdReceiver, JSON.stringify({
+                                                        value: 0 - message.amountToSend,
+                                                        lastTransaction: {
+                                                            block: block.blockInfo.blockNumber,
+                                                            hash: block.blockInfo.hash
+                                                        }
+                                                    }), function (err, value) {
+                                                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                                                    })
+                                                } else {
+                                                    let walletReceiver = JSON.parse(value)
+                                                    wallets.put(walletIdReceiver, JSON.stringify({
+                                                        value: walletReceiver.value + message.amountToSend,
+                                                        lastTransaction: {
+                                                            block: block.blockInfo.blockNumber,
+                                                            hash: block.blockInfo.hash
+                                                        }
+                                                    }), function (err, value) {
+                                                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                                                    })
+                                                }
+                                            });
+                                        }, indexTx * 15);
+                                }
+                                
+                            }
+                        });
+                      }, index * 400);
+                }
+            }
+        });
+    } catch (error) {
+        console.log("🌱 ~ file: server.js:900 ~ syncWallets ~ error", error)
+        
+    }
+}
+syncWallets()

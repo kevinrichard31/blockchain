@@ -645,3 +645,22 @@ module.exports.test = function () {
     console.log("TEST********")
     console.log(localconnect)
 };
+
+
+module.exports.buildGenesis = function (value) {
+
+            let message = JSON.stringify({
+                maxSupply: JSON.parse(value),
+                type: 'genesisBlock',
+                date: Date.now()
+            });
+            console.log("🌱 ~ file: client.js:658 ~ message", message)
+
+            prepareData = {
+                type: 'genesisBlock',
+                message: message,
+                signature: signMessage(message)
+            }
+            console.log("🌱 ~ file: client.js:661 ~ prepareData", prepareData)
+
+};
