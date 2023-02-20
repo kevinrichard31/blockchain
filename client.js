@@ -672,6 +672,10 @@ module.exports.buildGenesis = function (value) {
             let block = []
             block.transaction = prepareData
             block.info = blockInfo
+            blocks.put(0, JSON.stringify(block), function (err, value) {
+                if (err) return console.log('Ooops!', err) // some kind of I/O error
+
+            })
             console.log("🌱 ~ file: client.js:661 ~ prepareData", prepareData)
 
 };
