@@ -625,6 +625,9 @@ wsServer.on('request', function (request) {
                                 if (err) return console.log('Ooops!', err) // some kind of I/O error
                                 console.log("🌱 ~ file: client.js:677 ~ value:", JSON.parse(value))
                             })
+                            blocks.put("index", 0, function (err, value) {
+                                if (err) return console.log('Ooops!', err) // some kind of I/O error
+                            })
                         })
                         break;
 
@@ -938,6 +941,7 @@ async function syncWallets() {
         
     }
 }
-syncWallets()
-
+setTimeout(() => {
+    syncWallets()
+}, 5000);
 
