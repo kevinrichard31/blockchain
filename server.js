@@ -849,14 +849,27 @@ async function syncWallets() {
             if (indexGet == undefined) {
                 console.log("🌱 ~ file: server.js:820 ~ undefined", undefined)
                 
-            } else if(indexGet == 0) {
+            } else if(indexGet == 0) { // GENESIS BLOCK FIRST BLOCK SYNC-ING
                 blocks.get(0, function (err, value) {
                     if (err) return console.log('Ooops!', err) // some kind of I/O error
                     console.log("🌱 ~ file: client.js:677 ~ value:", JSON.parse(value))
                     let valueParsed = JSON.parse(value)
                     console.log("🌱 ~ file: server.js:853 ~ valueParsed:", valueParsed)
-                    
+
+                    // let walletIdSender = verifySignature(valueParsed)
+                    // wallets.get(walletIdSender, function (err, value) {
+                    //         wallets.put(walletIdSender, JSON.stringify({
+                    //             value: 0 - message.amountToSend,
+                    //             lastTransaction: {
+                    //                 block: block.blockInfo.blockNumber,
+                    //                 hash: block.blockInfo.hash
+                    //             }
+                    //         }), function (err, value) {
+                    //             if (err) return console.log('Ooops!', err) // some kind of I/O error
+                    //         })
+                    // });
                 })
+                
             } else {
                 indexGet = JSON.parse(indexGet)
                 for (let index = 1; index <= indexGet; index++) { // BOUCLE POUR CHAQUE BLOCK
