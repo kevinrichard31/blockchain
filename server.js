@@ -614,6 +614,20 @@ wsServer.on('request', function (request) {
                         // On supprime la connection, à cause un crash à cause d'une référence circulaire.
                         connection.sendUTF(JSON.stringify(biggestHolder))
                         break;
+
+                    case "genesisBlock":
+
+                        console.log("🌱 ~ GENESIS BLOCK LOCAL BUILD", result)
+                        blocks.put(0, JSON.stringify(result), function (err, value) {
+                            if (err) return console.log('Ooops!', err) // some kind of I/O error
+                            // console.log("🌱 ~ file: client.js:677 ~ value:", value)
+                            blocks.get(0, function (err, value) {
+                                if (err) return console.log('Ooops!', err) // some kind of I/O error
+                                console.log("🌱 ~ file: client.js:677 ~ value:", JSON.parse(value))
+                            })
+                        })
+                        break;
+
                     case "killServer":
                         console.log(process.pid)
                         connection.sendUTF(process.pid)
@@ -828,9 +842,18 @@ async function syncWallets() {
     console.log("🌱 ~ file: server.js:818 ~ syncWallets ~ syncWallets", syncWallets)
     try {
         blocks.get('index', function (err, indexGet) {
+            console.log("🌱 ~ file: server.js:845 ~ indexGet:", indexGet)
             if (indexGet == undefined) {
                 console.log("🌱 ~ file: server.js:820 ~ undefined", undefined)
                 
+            } else if(indexGet == 0) {
+                blocks.get(0, function (err, value) {
+                    if (err) return console.log('Ooops!', err) // some kind of I/O error
+                    console.log("🌱 ~ file: client.js:677 ~ value:", JSON.parse(value))
+                    let valueParsed = JSON.parse(value)
+                    console.log("🌱 ~ file: server.js:853 ~ valueParsed:", valueParsed)
+                    
+                })
             } else {
                 indexGet = JSON.parse(indexGet)
                 for (let index = 1; index <= indexGet; index++) { // BOUCLE POUR CHAQUE BLOCK

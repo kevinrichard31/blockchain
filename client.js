@@ -228,6 +228,7 @@ function getPeerList() {
 
 
 getPeerList().then(function (server) {
+    console.log("🌱 ~ file: client.js:231 ~ server:", server)
     // server is ready here
     // console.log(server)
     // FILTRER LES PEERS QUI N'ONT PAS LA MEME IP et qui ont le statut TRUE sur stacking.
@@ -238,6 +239,8 @@ getPeerList().then(function (server) {
         console.log(peer)
         let client = new WebSocketClient();
         client.connect('ws://' + peer.ip + ':8080/', 'echo-protocol');
+        console.log("🌱 ~ file: client.js:241 ~ peer.ip:", peer.ip)
+        
         client.on('connect', function (connection) {
             // Récupération de la connection local pour réutilisation pour ne pas avoir à se reconnecter
             let prepareData = {
@@ -282,7 +285,7 @@ getPeerList().then(function (server) {
         }, [])
 
         // console.log(combinedItems)
-
+        
         let biggestValuePeer = combinedItems.reduce((accum, actualValue) => accum.count > actualValue.count ? accum : actualValue);
         console.log('BIGGEST PEER')
         console.log(biggestValuePeer)
@@ -648,6 +651,9 @@ module.exports.test = function () {
 
 
 module.exports.buildGenesis = function (value) {
+            let client = new WebSocketClient();
+            client.connect('ws://localhost:8080/', 'echo-protocol');
+
 
             let message = JSON.stringify({
                 maxSupply: JSON.parse(value),
@@ -662,21 +668,31 @@ module.exports.buildGenesis = function (value) {
                 signature: signMessage(message)
             }
 
-            blockInfo =
-            {
+            blockInfo = {
                 blockNumber: 0,
                 creationDate: new Date(),
-                hash: sha3.keccak256(blockPush.blocks)
+                hash: sha3.keccak256(JSON.stringify(prepareData))
             }
 
             let block = []
-            block.transaction = prepareData
-            block.info = blockInfo
-            blocks.put(0, JSON.stringify(block), function (err, value) {
-                if (err) return console.log('Ooops!', err) // some kind of I/O error
 
-            })
-            console.log("🌱 ~ file: client.js:661 ~ prepareData", prepareData)
+            block = prepareData
+            block.info = blockInfo
+            console.log("🌱 ~ file: client.js:673 ~ block:", block)
+
+            client.on('connect', function (connection) {
+                console.log("Connected to GIGANETWORK")
+                console.log("🌱 ~ file: client.js:675 ~ block:", block)
+
+                connection.sendUTF(JSON.stringify(block))
+                connection.on('message', function (message) {
+                    if (message.type === 'utf8') {
+                        console.log(message.utf8Data);
+                    }
+                });
+                setTimeout(() => {
+                    connection.close()
+                }, 1000);
+            });
 
 };
-
