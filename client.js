@@ -311,6 +311,7 @@ async function getIndex(peer) {
         let prepareData = {
             type: "getIndex"
         }
+        console.log("🌱 ~ file: client.js:314 ~ prepareData:", prepareData)
         connection.sendUTF(JSON.stringify(prepareData))
         connection.on('message', function (message) {
             if (message.type === 'utf8') {
@@ -677,7 +678,7 @@ module.exports.buildGenesis = function (value) {
             let block = []
 
             block = prepareData
-            block.info = blockInfo
+            block.blockInfo = blockInfo
             console.log("🌱 ~ file: client.js:673 ~ block:", block)
 
             client.on('connect', function (connection) {

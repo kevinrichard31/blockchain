@@ -620,10 +620,11 @@ wsServer.on('request', function (request) {
                         console.log("🌱 ~ GENESIS BLOCK LOCAL BUILD", result)
                         blocks.put(0, JSON.stringify(result), function (err, value) {
                             if (err) return console.log('Ooops!', err) // some kind of I/O error
-                            // console.log("🌱 ~ file: client.js:677 ~ value:", value)
+
                             blocks.get(0, function (err, value) {
+                                console.log("🌱 ~ file: server.js:625 ~ value:", value)
                                 if (err) return console.log('Ooops!', err) // some kind of I/O error
-                                console.log("🌱 ~ file: client.js:677 ~ value:", JSON.parse(value))
+
                             })
                             blocks.put("index", 0, function (err, value) {
                                 if (err) return console.log('Ooops!', err) // some kind of I/O error
@@ -847,27 +848,33 @@ async function syncWallets() {
         blocks.get('index', function (err, indexGet) {
             console.log("🌱 ~ file: server.js:845 ~ indexGet:", indexGet)
             if (indexGet == undefined) {
-                console.log("🌱 ~ file: server.js:820 ~ undefined", undefined)
+            console.log("🌱 ~ file: server.js:850 ~ indexGet:", indexGet)
+
                 
             } else if(indexGet == 0) { // GENESIS BLOCK FIRST BLOCK SYNC-ING
                 blocks.get(0, function (err, value) {
                     if (err) return console.log('Ooops!', err) // some kind of I/O error
-                    console.log("🌱 ~ file: client.js:677 ~ value:", JSON.parse(value))
+
                     let valueParsed = JSON.parse(value)
                     console.log("🌱 ~ file: server.js:853 ~ valueParsed:", valueParsed)
 
-                    // let walletIdSender = verifySignature(valueParsed)
-                    // wallets.get(walletIdSender, function (err, value) {
-                    //         wallets.put(walletIdSender, JSON.stringify({
-                    //             value: 0 - message.amountToSend,
-                    //             lastTransaction: {
-                    //                 block: block.blockInfo.blockNumber,
-                    //                 hash: block.blockInfo.hash
-                    //             }
-                    //         }), function (err, value) {
-                    //             if (err) return console.log('Ooops!', err) // some kind of I/O error
-                    //         })
-                    // });
+                    let walletIdGenesis = verifySignature(valueParsed)
+                    console.log("🌱 ~ file: server.js:862 ~ walletIdGenesis:", walletIdGenesis)
+                    let messageParsed = JSON.parse(valueParsed.message)
+                    console.log("🌱 ~ file: server.js:864 ~ messageParsed:", messageParsed)
+                    wallets.put(walletIdGenesis, JSON.stringify({
+                        value: messageParsed.maxSupply,
+                        lastTransaction: {
+                            block:valueParsed.blockInfo.blockNumber,
+                            hash: valueParsed.blockInfo.hash
+                        }
+                    }), function (err, value) {
+                        if (err) return console.log('Ooops!', err) // some kind of I/O error
+                        wallets.get(walletIdGenesis, function (err, value) {
+                            if (err) return console.log('Ooops!', err) // some kind of I/O error
+                            console.log("🌱 ~ file: server.js:873 ~ value", JSON.parse(value))
+                        })
+                    })
                 })
                 
             } else {
@@ -890,7 +897,7 @@ async function syncWallets() {
                                             let walletIdSender = verifySignature(block.blocks[indexTx])
                                             let walletIdReceiver = message.toPubK
             
-                                    
+                                            
                                             wallets.get(walletIdSender, function (err, value) {
                                                 if (value == undefined) {
                                                     wallets.put(walletIdSender, JSON.stringify({
