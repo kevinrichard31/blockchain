@@ -10,7 +10,6 @@ var http = require('http');
 let ip
 http.get({ 'host': 'checkip.amazonaws.com', 'port': 80, 'path': '/' }, function (resp) {
     resp.on('data', function (ipo) {
-
         ip = ipo.toString().replace(/(\r\n|\n|\r)/gm, "");
     });
 });
