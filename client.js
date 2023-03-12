@@ -1,4 +1,4 @@
-// const level = require('level')
+
 const crypto = require('crypto')
 const fs = require('fs')
 const bs58 = require('bs58')
@@ -299,9 +299,6 @@ getPeerList().then(function (server) {
 });
 // console.log(getPeerList())
 async function getIndex(peer) {
-    const level = require('level')
-    const wallets = level('wallets')
-    const blocks = level('blocks')
     let index
     let client = new WebSocketClient();
     client.connect('ws://' + peer.ip + ':8080/', 'echo-protocol');
@@ -332,25 +329,23 @@ async function getIndex(peer) {
                     }
 
                     function nextstepgetblocks(myIndex) {
-                        // getBlocks(myIndex, indexFromPeer, level, wallets, blocks)
                         if(myIndex == indexFromPeer){
                             console.log('Your block index : ' + myIndex)
                             console.log('Peer Index : ' + indexFromPeer)
                             console.log('You are already up to date.')
-                        }
+                        } // vérifie si on est à jour
                         if (myIndex == undefined || indexFromPeer > myIndex) {
-                            console.log('TEST*********')
+                            console.log("🌱 ~ file: client.js:338 ~ ON EST PAS A JOUR", myIndex)
+                            
                             if ((indexFromPeer - myIndex) > 3 || isNaN(indexFromPeer - myIndex)) {
 
 
                                 let max = indexFromPeer
                                 let countBetween = indexFromPeer - myIndex
                                 let countBetweenInterval = countBetween / 1
-                                let steps = 30
+                                let steps = 30 // nombre de blocks à récupérer
 
                                 let testInterval = Math.round(indexFromPeer/steps)
-                                console.log('testinterval')
-                                console.log(testInterval)
                                 if(isNaN(myIndex)){
                                     indexFromPeer = Number(steps)
                                 } else {

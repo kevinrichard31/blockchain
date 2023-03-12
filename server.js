@@ -455,7 +455,8 @@ setInterval(() => {
 
 
 function verifySignature(result) {
-    // console.log(result.message)
+console.log("🌱 ~ file: server.js:458 ~ verifySignature ~ result:", result)
+
     let msgHash = sha3.keccak256(result.message)
     // console.log("msghash : " + msgHash)
 
@@ -573,6 +574,8 @@ wsServer.on('request', function (request) {
                         console.log("becomeStacker");
                         async function getIndex() {
                             let index = await blocks.get('index')
+
+                            
                             connection.sendUTF(index)
                         }
                         getIndex()
@@ -840,6 +843,8 @@ wsServer.on('request', function (request) {
 function gID() {
     return Math.random().toString(16).slice(2)
 }
+
+
 
 // synchronise les wallets par rapport aux blocs enregistrés
 async function syncWallets() {
